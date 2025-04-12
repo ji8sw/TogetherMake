@@ -15,6 +15,7 @@
 #include "Input.h"
 #include <vector>
 #include <chrono>
+#include <string>
 #define USE_VSYNC 1
 
 std::vector<float> CubeVertices =
@@ -85,6 +86,11 @@ namespace GraphicsManager
 		std::chrono::high_resolution_clock::time_point PreviousTime;
 		std::vector<unsigned int> ShadersToDestroyOnCleanup;
 		Input* IManager = nullptr;
+
+		// Sun Light Info:
+		glm::vec3 LightPosition = glm::vec3(0.0f, -1.0f, -0.3f);
+		glm::vec3 LightColour = glm::vec3(1.0f, 1.0f, 1.0f);
+		float LightRange = 15.0f;
 
 		bool Initialize()
 		{
@@ -184,7 +190,10 @@ namespace GraphicsManager
 			if (!Success)
 			{
 				glGetShaderInfoLog(NewShader, 512, NULL, InfoLog);
-				throw "Shader compilation failed";
+#ifdef _DEBUG
+				std::cout << "Shader compilation failed, error: " << InfoLog << std::endl;
+#endif
+				throw;
 			}
 
 			return NewShader;
@@ -240,6 +249,11 @@ namespace GraphicsManager
 			float ScreenX = (NDC.x * 0.5f + 0.5f) * 1920;
 			float ScreenY = (1.0f - (NDC.y * 0.5f + 0.5f)) * 1080; // flip Y for top-left
 			return ImVec2(ScreenX, ScreenY);
+		}
+
+		inline ImVec2 WorldToScreenPosition(glm::vec3 WorldPosition)
+		{
+			return WorldToScreenPosition(glm::vec4(WorldPosition, 1.0f));
 		}
 
 		inline glm::vec3 ScreenToWorldPosition(ImVec2 ScreenPosition)

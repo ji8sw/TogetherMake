@@ -68,6 +68,12 @@ int main()
 				if (ImGui::BeginTabItem("Material"))
 				{
 					ImGui::ColorPicker4("Colour", (float*)&MainObject.Colour, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+					ImGui::DragFloat3("Sun Position", (float*)&GManager.LightPosition, 0.1f);
+					ImGui::DragFloat3("Sun Colour", (float*)&GManager.LightColour, 0.1f);
+					ImGui::DragFloat("Sun Range", &GManager.LightRange, 0.1f);
+
+					// Draw fake sun while in this menu
+					DrawList->AddCircle(GManager.WorldToScreenPosition(GManager.LightPosition), 10.0f, IM_COL32(208, 245, 0, 255));
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("Multiplayer"))

@@ -65,6 +65,12 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Projection"), 1, GL_FALSE, glm::value_ptr(Manager.Projection));
 		glUniform4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Colour"), 1, &Colour.x);
 
+		// Lighting
+		glUniform3fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "LightPosition"), 1, &Manager.LightPosition.x);
+		glUniform3fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "LightColour"), 1, &Manager.LightColour.x);
+		glUniform3fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "ViewPosition"), 1, &Manager.CameraPosition.x);
+		glUniform1fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "LightRange"), 1, &Manager.LightRange);
+
 		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Model"), 1, GL_FALSE, glm::value_ptr(GetModel())); // layout(location = 2) uniform mat4 Model
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
