@@ -19,7 +19,7 @@ Press F1-F3 to change rendering modes
 # To-Do
 This project has a lot of to-do's as it was literally just created.
 ### :x: Create sessions on server by request from client
-### :x: Improve shaders: lighting
-### :construction: Improve shaders: object colour selection
+### :construction: Improve shaders: lighting
+### :white_check_mark: Improve shaders: object colour selection
 ### :x: Improve controls: move vertex tool (G)
 ### :x: Improve controls: stop camera jumping to center
