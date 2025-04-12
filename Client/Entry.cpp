@@ -61,23 +61,36 @@ int main()
 		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
 		DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
 
-		if (ImGui::Begin("Session"))
+		if (ImGui::Begin("Together Make"))
 		{
-			if (NManager.Server)
+			if (ImGui::BeginTabBar("Tabs"))
 			{
-
-			}
-			else
-			{
-				ImGui::Text("Not Connected...");
-				ImGui::SameLine();
-				if (ImGui::Button("Connect"))
+				if (ImGui::BeginTabItem("Material"))
 				{
-					if (!NManager.TryConnectToMatchmakingServer())
-					{
-						std::cout << "failed to connect\n";
-					}
+					ImGui::ColorPicker4("Colour", (float*)&MainObject.Colour, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+					ImGui::EndTabItem();
 				}
+				if (ImGui::BeginTabItem("Multiplayer"))
+				{
+					if (NManager.Server)
+					{
+
+					}
+					else
+					{
+						ImGui::Text("Not Connected...");
+						ImGui::SameLine();
+						if (ImGui::Button("Connect"))
+						{
+							if (!NManager.TryConnectToMatchmakingServer())
+							{
+								std::cout << "failed to connect\n";
+							}
+						}
+					}
+					ImGui::EndTabItem();
+				}
+				ImGui::EndTabBar();
 			}
 			ImGui::End();
 		}

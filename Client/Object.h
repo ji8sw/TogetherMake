@@ -4,6 +4,7 @@
 class Object
 {
 public:
+	ImVec4 Colour = ImVec4(0.9f, 0.9f, 0.9f, 1.0f);
 	inline glm::mat4 GetModel() { return glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0)); }
 
 	// The following turns a vertex local position using its model matrix
@@ -60,10 +61,11 @@ public:
 		glUseProgram(Manager.PrimaryShaderProgram);
 		glBindVertexArray(Manager.VAO);
 
-		glUniformMatrix4fv(3, 1, GL_FALSE, &Manager.View[0][0]); // layout(location = 3) uniform mat4 View;
-		glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(Manager.Projection)); // layout(location = 4) uniform mat4 Projection;
+		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "View"), 1, GL_FALSE, &Manager.View[0][0]); // layout(location = 3) uniform mat4 View;
+		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Projection"), 1, GL_FALSE, glm::value_ptr(Manager.Projection));
+		glUniform4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Colour"), 1, &Colour.x);
 
-		glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(GetModel())); // layout(location = 2) uniform mat4 Model
+		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Model"), 1, GL_FALSE, glm::value_ptr(GetModel())); // layout(location = 2) uniform mat4 Model
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 };

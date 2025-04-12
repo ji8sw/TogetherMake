@@ -27,9 +27,10 @@ R"(
 out vec4 FragColor;
 
 in vec3 FragmentPosition;
+uniform vec4 Colour;
 
 void main()
 {
-    FragColor = vec4(0.9, 0.9, 0.9, 1.0); // -Pink- White
+    FragColor = Colour;
 }
 )";

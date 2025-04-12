@@ -106,7 +106,10 @@ namespace GraphicsManager
 			glfwMakeContextCurrent(Window);
 			glfwSwapInterval(USE_VSYNC); // vsync
 			glewInit();
+
 			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			// OpenGL3
 			IMGUI_CHECKVERSION();
