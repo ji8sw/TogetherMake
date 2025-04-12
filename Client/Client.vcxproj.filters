@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Entry.cpp" />
+    <ClCompile Include="Input.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NetManager.h" />
+    <ClInclude Include="GraphicsManager.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderCode.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Graphics">
+      <UniqueIdentifier>{fd92b9ae-dbe3-4a10-b2a2-d37e7d15e4e6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
