@@ -17,6 +17,7 @@ enum KeyCodes
     E,
     X,
     Z,
+    G,
     SPACE,
     ARROW_LEFT,
     ARROW_RIGHT,

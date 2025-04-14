@@ -19,6 +19,7 @@ void Input::SetStandardKeys()
 	Keys[E] = { GLFW_KEY_E };
 	Keys[X] = { GLFW_KEY_X };
 	Keys[Z] = { GLFW_KEY_Z };
+	Keys[G] = { GLFW_KEY_G };
 	Keys[SPACE] = { GLFW_KEY_SPACE };
 	Keys[ARROW_LEFT] = { GLFW_KEY_LEFT };
 	Keys[ARROW_RIGHT] = { GLFW_KEY_RIGHT };

@@ -82,6 +82,7 @@ namespace GraphicsManager
 		glm::vec3 CameraPosition = glm::vec3(0.0f, 0.0f, 15.0f);
 		glm::vec3 CameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 CameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		float CameraFOV = 45.0f;
 		double DeltaTime = 0.0f;
 		std::chrono::high_resolution_clock::time_point PreviousTime;
 		std::vector<unsigned int> ShadersToDestroyOnCleanup;
@@ -217,7 +218,7 @@ namespace GraphicsManager
 			glBindVertexArray(VAO);
 
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, CubeVertices.size() * sizeof(float), CubeVertices.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, CubeVertices.size() * sizeof(float), CubeVertices.data(), GL_DYNAMIC_DRAW);
 
 			// position attribute
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -307,6 +308,24 @@ namespace GraphicsManager
 
 			// 5. Update View Matrix
 			View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
+		}
+
+		// used for scaling world position based on screen resolution
+		glm::vec2 GetWorldPerPixel(glm::vec3 For)
+		{
+			float ScreenWidth = ImGui::GetIO().DisplaySize.x;
+			float ScreenHeight = ImGui::GetIO().DisplaySize.y;
+
+			// distance from camera to what we want to scale for
+			float Depth = glm::length(For - CameraPosition);
+
+			float HalfHeight = tan(glm::radians(CameraFOV) * 0.5f) * Depth;
+			float HalfWidth = HalfHeight * (ScreenWidth / ScreenHeight);
+
+			float WorldPerPixelX = (HalfHeight * 2.0f) / ScreenWidth;
+			float WorldPerPixelY = (HalfWidth * 2.0f) / ScreenHeight;
+
+			return glm::vec2(WorldPerPixelX, WorldPerPixelY);
 		}
 	};
 }

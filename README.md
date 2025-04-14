@@ -15,6 +15,9 @@ the interface is using Dear ImGui, it is currently very simple, the main attract
 Hold middle mouse (scrollwheel) and move your mouse to rotate the camera around the origin
 Click on corners of the cube to select vertices
 Press F1-F3 to change rendering modes
+While a vertex is selected, press G to enter Move mode
+Mode mode: move the mouse to change the position of the vertex
+All modes: press enter to confirm your changes, or escape to cancel changes
 
 # To-Do
 This project has a lot of to-do's as it was literally just created.
@@ -22,5 +25,5 @@ This project has a lot of to-do's as it was literally just created.
 ### :x: Improve Networking: Sync vertex selection
 ### :white_check_mark: Improve shaders: lighting
 ### :white_check_mark: Improve shaders: object colour selection
-### :x: Improve controls: move vertex tool (G)
+### :construction: Improve controls: move vertex tool (G)
 ### :x: Improve controls: stop camera jumping to center

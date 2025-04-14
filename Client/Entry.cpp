@@ -3,8 +3,15 @@
 #include "Object.h"
 #ifdef _DEBUG
 #include <iostream>
+#include <format>
 #endif
 #define SELECTION_COLOUR IM_COL32(255, 0, 0, 255)
+
+enum EMode
+{
+	None,
+	Move
+};
 
 int main()
 {
@@ -19,13 +26,17 @@ int main()
 	GManager.SetupStandardShaders();
 	Object MainObject;
 	GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
-	int SelectedVertexIndex = 0;
+	int SelectedVertexIndex = -1;
+	EMode SelectedMode = None;
+	glm::vec3 DragStartWorldPosition;
+	glm::vec2 DragStartMousePosition;
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
 		NManager.RecievePackets();
-
-		GManager.Projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+		GManager.Projection = glm::perspective(glm::radians(GManager.CameraFOV), 1920.0f / 1080.0f, 0.1f, 100.0f);
+		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
+		auto MousePosition = ImGui::GetIO().MousePos;
 
 		if (glfwGetMouseButton(GManager.Window, GLFW_MOUSE_BUTTON_MIDDLE))
 			GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
@@ -47,21 +58,71 @@ int main()
 			GManager.IManager->Keys[F3].JustReleased = false;
 		}
 
+		if (GManager.IManager->Keys[G].JustReleased && SelectedVertexIndex != INVALID_INT) // G: Move vertex mode
+		{
+			SelectedMode = Move;
+			DragStartMousePosition = glm::vec2(MousePosition.x, MousePosition.y);
+			DragStartWorldPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
+			GManager.IManager->Keys[G].JustReleased = false;
+		}
+
+		if (GManager.IManager->Keys[ESCAPE].JustReleased && SelectedMode != None) // Escape: cancel changes
+		{
+			switch (SelectedMode)
+			{
+			case Move:
+			{
+				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
+				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(DragStartWorldPosition, 1.0f)); // resets vertex position to original
+				break;
+			}
+			}
+
+			SelectedMode = None;
+			GManager.IManager->Keys[ESCAPE].JustReleased = false;
+		}
+
+		if (GManager.IManager->Keys[ENTER].JustReleased && SelectedMode != None) // Enter: confirm changes
+		{
+			SelectedMode = None;
+			GManager.IManager->Keys[ENTER].JustReleased = false;
+		}
+
+		switch (SelectedMode)
+		{
+			case Move:
+			{
+				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
+				glm::vec2 MouseDelta = glm::vec2(MousePosition.x, MousePosition.y) - DragStartMousePosition;
+
+				float Sensitivity = 0.00007f;
+				glm::vec2 Scale = GManager.GetWorldPerPixel(DragStartWorldPosition);
+				glm::vec3 Change = glm::vec3(-MouseDelta.x / Scale.x, -MouseDelta.y / Scale.y, 0.0f) * Sensitivity;
+
+				glm::vec3 NewWorldPosition = DragStartWorldPosition + Change;
+
+				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(NewWorldPosition, 1.0f));
+				break;
+			}
+		}
+
 		MainObject.Render(GManager);
 
 		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS)
 		{
-			ImVec2 MouseScreenPosition = ImGui::GetIO().MousePos;
+			ImVec2 MouseScreenPosition = MousePosition;
 			auto CursorWorldPosition = GManager.ScreenToWorldPosition(MouseScreenPosition);
 			SelectedVertexIndex = MainObject.GetClosestVertex(CursorWorldPosition);
 		}
 
-		auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
-		auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
+		if (SelectedVertexIndex != INVALID_INT)
+		{
+			auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
+			auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
 
-		// Draw the circle
-		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
-		DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+			// Draw the circle
+			DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+		}
 
 		if (ImGui::Begin("Together Make"))
 		{
