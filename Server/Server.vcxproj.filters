@@ -5,5 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NetManager.h" />
+    <ClInclude Include="..\PacketHelper.h" />
   </ItemGroup>
 </Project>

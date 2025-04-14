@@ -1,7 +1,10 @@
 #pragma once
-#include "enet/enet.h"
-#define MAX_CONNECTION_ATTEMPTS 5
 #include <iostream>
+
+#include "enet/enet.h"
+#include "PacketHelper.h"
+using namespace Samurai;
+#define MAX_CONNECTION_ATTEMPTS 5
 
 namespace NetManager
 {
@@ -57,6 +60,43 @@ namespace NetManager
                 enet_peer_reset(Server);
                 Server = nullptr;
                 return false;
+            }
+        }
+
+        void RecievePackets()
+        {
+            ENetEvent Event;
+            while (enet_host_service(Self, &Event, 1) > 0)
+            {
+                switch (Event.type)
+                {
+                case ENET_EVENT_TYPE_RECEIVE:
+                {
+                    Packet Incoming = Packet::deserialize((char*)Event.packet->data, Event.packet->dataLength);
+                    size_t Offset = 0;
+
+                    switch (Incoming.type)
+                    {
+                        case PROVIDE_JOINER_INFO: // a new player is broadcasting their name
+                        {
+                            std::string PlayerName = extractString(Incoming.data, Offset);
+                            std::cout << PlayerName << " has joined the session.\n";
+                            break;
+                        }
+                        case PROVIDE_EXISTING_PLAYER_INFOS: // server is sending us all existing players
+                        {
+                            int PlayerCount = extractInt(Incoming.data, Offset);
+                            for (int PlayerIndex = 0; PlayerIndex < PlayerCount; PlayerIndex++)
+                                std::cout << "We joined " << extractString(Incoming.data, Offset) << std::endl;
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+                }
+
+                enet_packet_destroy(Event.packet);
             }
         }
 	};

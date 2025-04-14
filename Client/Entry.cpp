@@ -23,6 +23,8 @@ int main()
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
+		NManager.RecievePackets();
+
 		GManager.Projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
 		if (glfwGetMouseButton(GManager.Window, GLFW_MOUSE_BUTTON_MIDDLE))
@@ -91,6 +93,12 @@ int main()
 							if (!NManager.TryConnectToMatchmakingServer())
 							{
 								std::cout << "failed to connect\n";
+							}
+							else // connected, send nickname to server
+							{
+								Packet packet = Packet(PROVIDE_JOINER_INFO);
+								appendString(packet.data, "Player");
+								Samurai::sendNow(packet, NManager.Server); // TODO: REPLACE WITH CHOSEN NICKNAME
 							}
 						}
 					}

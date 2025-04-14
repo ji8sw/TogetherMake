@@ -16,6 +16,7 @@
       <Filter>Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Input.h" />
+    <ClInclude Include="..\PacketHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Graphics">

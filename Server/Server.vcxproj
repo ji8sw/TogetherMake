@@ -82,11 +82,13 @@
     <OutDir>$(ProjectDir)Build\</OutDir>
     <IntDir>$(ProjectDir)Build\Intermediate\</IntDir>
     <LibraryPath>$(SolutionDir)vcpkg\installed\x64-windows\lib\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Build\</OutDir>
     <IntDir>$(ProjectDir)Build\Intermediate\</IntDir>
     <LibraryPath>$(SolutionDir)vcpkg\installed\x64-windows\lib\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -150,6 +152,7 @@
     <ClCompile Include="Entry.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PacketHelper.h" />
     <ClInclude Include="NetManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
