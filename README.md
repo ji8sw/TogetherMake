@@ -22,8 +22,13 @@ All modes: press enter to confirm your changes, or escape to cancel changes
 # To-Do
 This project has a lot of to-do's as it was literally just created.
 ### :construction: Improve Networking:  Create sessions on server by request from client
-### :x: Improve Networking: Sync vertex selection
+### :white_check_mark: Improve Networking: Sync vertex selection
 ### :white_check_mark: Improve shaders: lighting
 ### :white_check_mark: Improve shaders: object colour selection
 ### :construction: Improve controls: move vertex tool (G)
 ### :x: Improve controls: stop camera jumping to center
+### :x: Improve controls: deselect vertex (click away)
+### :x: Improve controls: deselect vertex (cancel with escape)
+### :x: Safety (client): ensure vertices exist before accessing with them
+### :x: Safety (server): ensure peers are registered players when recieving packety
+### :x: Safety (server): password requirements

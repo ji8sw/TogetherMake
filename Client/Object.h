@@ -1,32 +1,80 @@
 #pragma once
 #include "GraphicsManager.h"
 
+// contains vertex position and information related to network status
+struct NetVertex
+{
+	glm::vec3 Position;
+	glm::vec2 TextureCoordinates;
+	bool IsGrabbed;
+
+	// InVertexData: [x, y, z, u, v]
+	static constexpr NetVertex FromRaw(std::vector<float> InVertexData)
+	{
+		NetVertex New = NetVertex();
+		if (InVertexData.size() < 5) return New;
+		New.Position.x = InVertexData[0];
+		New.Position.y = InVertexData[1];
+		New.Position.z = InVertexData[2];
+		New.TextureCoordinates.x = InVertexData[3];
+		New.TextureCoordinates.y = InVertexData[4];
+		return New;
+	}
+
+	// InVertexDataList: [x, y, z, u, v] repeated
+	static constexpr std::vector<NetVertex> FromRawList(std::vector<float> InVertexDataList)
+	{
+		std::vector<NetVertex> List = std::vector<NetVertex>();
+		for (int Index = 0; Index < InVertexDataList.size(); Index += 5)
+		{
+			NetVertex New = NetVertex();
+			New.Position.x = InVertexDataList[Index + 0];
+			New.Position.y = InVertexDataList[Index + 1];
+			New.Position.z = InVertexDataList[Index + 2];
+			New.TextureCoordinates.x = InVertexDataList[Index + 3];
+			New.TextureCoordinates.y = InVertexDataList[Index + 4];
+			List.push_back(New);
+		}
+		return List;
+	}
+
+	// Return: [x, y, z, u, v] repeated
+	static constexpr std::vector<float> ToRawList(std::vector<NetVertex> InVertexDataList)
+	{
+		std::vector<float> List = std::vector<float>();
+		for (const NetVertex& Vertex : InVertexDataList)
+		{
+			List.push_back(Vertex.Position.x);
+			List.push_back(Vertex.Position.y);
+			List.push_back(Vertex.Position.z);
+			List.push_back(Vertex.TextureCoordinates.x);
+			List.push_back(Vertex.TextureCoordinates.y);
+		}
+		return List;
+	}
+};
+
 class Object
 {
 public:
 	ImVec4 Colour = ImVec4(0.9f, 0.9f, 0.9f, 1.0f);
 	inline glm::mat4 GetModel() { return glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0)); }
-	std::vector<float> Vertices = CubeVertices;
+	std::vector<NetVertex> Vertices = NetVertex::FromRawList(CubeVertices);
 
 	// for the following vertex usages, the * 5 is because our vertices are layed out as: [x, y, z, u, v]
 
 	// The following turns a vertex local position using its model matrix
 	inline glm::vec4 GetVertexWorldPosition(int VertexIndex)
 	{
-		glm::vec3 LocalVertexPos(Vertices[VertexIndex], Vertices[VertexIndex + 1], Vertices[VertexIndex + 2]);
+		glm::vec3 LocalVertexPos(Vertices[VertexIndex].Position);
 		return GetModel() * glm::vec4(LocalVertexPos, 1.0f);
 	}
 
 	// sets the vertex world position
 	void SetVertexWorldPosition(int VertexIndex, glm::vec4 NewWorldPosition)
 	{
-		int DesiredVertex = VertexIndex * 5;
-		if (DesiredVertex + 2 > Vertices.size()) return;
 		glm::vec4 LocalPosition = glm::inverse(GetModel()) * NewWorldPosition;
-
-		Vertices[DesiredVertex + 0] = LocalPosition.x;
-		Vertices[DesiredVertex + 1] = LocalPosition.y;
-		Vertices[DesiredVertex + 2] = LocalPosition.z;
+		Vertices[VertexIndex].Position = LocalPosition;
 	}
 
 	// To should be world position
@@ -35,7 +83,7 @@ public:
 		int ClosestIndex = 0;
 		float ClosestDistance = 100000.0f;
 
-		for (int VertexIndex = 0; VertexIndex < Vertices.size(); VertexIndex += 5)
+		for (int VertexIndex = 0; VertexIndex < Vertices.size(); VertexIndex++)
 		{
 			auto VertexPosition = GetVertexWorldPosition(VertexIndex);
 			float Distance = glm::distance(glm::vec3(VertexPosition), To);
@@ -56,7 +104,7 @@ public:
 		glm::vec4 Closest;
 		float ClosestDistance = 100000.0f;
 
-		for (int VertexIndex = 0; VertexIndex < Vertices.size(); VertexIndex += 5)
+		for (int VertexIndex = 0; VertexIndex < Vertices.size(); VertexIndex++)
 		{
 			auto VertexPosition = GetVertexWorldPosition(VertexIndex);
 			float Distance = glm::distance(glm::vec3(VertexPosition), To);
@@ -71,16 +119,26 @@ public:
 		return Closest;
 	}
 
-	void Render(GraphicsManager::Manager& Manager)
+	// uploads vertices to gpu
+	inline void UploadVertices(GraphicsManager::Manager& Manager)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, Manager.VBO);
-		glBufferData(GL_ARRAY_BUFFER, Vertices.size() * sizeof(float), Vertices.data(), GL_DYNAMIC_DRAW);
+		auto RawVertices = NetVertex::ToRawList(Vertices);
+		glBufferData(GL_ARRAY_BUFFER, RawVertices.size() * sizeof(float), RawVertices.data(), GL_DYNAMIC_DRAW);
+	}
+
+	void Render(GraphicsManager::Manager& Manager)
+	{
+		UploadVertices(Manager); // in future: only upload when changed
 
 		glUseProgram(Manager.PrimaryShaderProgram);
 		glBindVertexArray(Manager.VAO);
 
+		// Camera
 		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "View"), 1, GL_FALSE, &Manager.View[0][0]); // layout(location = 3) uniform mat4 View;
 		glUniformMatrix4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Projection"), 1, GL_FALSE, glm::value_ptr(Manager.Projection));
+
+		// Material
 		glUniform4fv(glGetUniformLocation(Manager.PrimaryShaderProgram, "Colour"), 1, &Colour.x);
 
 		// Lighting

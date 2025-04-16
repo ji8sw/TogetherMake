@@ -24,7 +24,12 @@ namespace Samurai
         REQUEST_SEND_INVITE,
         PROVIDE_INVITE,
         PLAYER_LEFT,
-        PROVIDE_EXISTING_PLAYER_INFOS
+        PROVIDE_EXISTING_PLAYER_INFOS,
+
+        // Game
+        SELECT_VERTEX,
+        DESELECT_VERTEX,
+        UPDATE_VERTEX_POSITION,
     };
 
     enum QuickResponseType  // used in cases when you dont want to send extra data, helper functions exist for sending these easily
@@ -135,7 +140,7 @@ namespace Samurai
     template <typename T>
     T extractData(const std::vector<char>& buffer, size_t& offset)
     {
-        if (offset + sizeof(T) > buffer.size()) { std::cerr << "Buffer underflow while extracting data." << std::endl; return INVALID_INT; }
+        if (offset + sizeof(T) > buffer.size()) { std::cerr << "Buffer underflow while extracting data." << std::endl; return T(); }
         T value;
         memcpy(&value, buffer.data() + offset, sizeof(T));
         offset += sizeof(T);

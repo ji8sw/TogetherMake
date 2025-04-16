@@ -48,6 +48,18 @@ int main()
                         }
                         break;
                     }
+                    case SELECT_VERTEX:
+                    case DESELECT_VERTEX:
+                    case UPDATE_VERTEX_POSITION:
+                    {
+                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
+                        if (Player)
+                        {
+                            auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
+                            sendBroadcastNow(AllOtherPlayers, Incoming);
+                        }
+                        break;
+                    }
                 }
 
                 break;

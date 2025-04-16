@@ -116,15 +116,37 @@ void Input::KeyCallback(GLFWwindow* Window, int Keycode, int ScanCode, int Actio
 		auto& Key = KeyEntry.second;
 		if (Key.Keycode == Keycode)
 		{
-			if (Key.PressedOrRepeated && Action == GLFW_RELEASE) Key.JustReleased = true;
-			Key.State = Action;
 			Key.PressedOrRepeated = (Action == GLFW_PRESS || Action == GLFW_REPEAT);
+			if (Action == GLFW_RELEASE) Key.JustReleased = true;
+			Key.State = Action;
 		}
 	}
 }
 
 void Input::MouseButtonCallback(GLFWwindow* Window, int Button, int Action, int Mods)
 {
+	switch (Button)
+	{
+	case GLFW_MOUSE_BUTTON_1:
+		Keys[LEFT_MOUSE].PressedOrRepeated = (Action == GLFW_PRESS || Action == GLFW_REPEAT);
+
+		if (Action == GLFW_RELEASE) Keys[LEFT_MOUSE].JustReleased = true;
+		Keys[LEFT_MOUSE].State = Action;
+		break;
+	case GLFW_MOUSE_BUTTON_2:
+		Keys[RIGHT_MOUSE].PressedOrRepeated = (Action == GLFW_PRESS || Action == GLFW_REPEAT);
+
+		if (Action == GLFW_RELEASE) Keys[RIGHT_MOUSE].JustReleased = true;
+		Keys[RIGHT_MOUSE].State = Action;
+		break;
+	case GLFW_MOUSE_BUTTON_3:
+		Keys[MIDDLE_MOUSE].PressedOrRepeated = (Action == GLFW_PRESS || Action == GLFW_REPEAT);
+
+		if (Action == GLFW_RELEASE) Keys[MIDDLE_MOUSE].JustReleased = true;
+		Keys[MIDDLE_MOUSE].State = Action;
+		break;
+	}
+
 	ImGui_ImplGlfw_MouseButtonCallback(Window, Button, Action, Mods);
 }
 

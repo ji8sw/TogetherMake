@@ -33,7 +33,10 @@ enum KeyCodes
     ESCAPE,
     F1,
     F2,
-    F3
+    F3,
+    LEFT_MOUSE,
+    MIDDLE_MOUSE,
+    RIGHT_MOUSE
 };
 
 class Input

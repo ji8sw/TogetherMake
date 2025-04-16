@@ -25,6 +25,7 @@ int main()
 	if (!GManager.Initialize()) throw "Failed to start.";
 	GManager.SetupStandardShaders();
 	Object MainObject;
+	NManager.MainObject = &MainObject;
 	GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
 	int SelectedVertexIndex = -1;
 	EMode SelectedMode = None;
@@ -38,24 +39,21 @@ int main()
 		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
 		auto MousePosition = ImGui::GetIO().MousePos;
 
-		if (glfwGetMouseButton(GManager.Window, GLFW_MOUSE_BUTTON_MIDDLE))
+		if (GManager.IManager->Keys[MIDDLE_MOUSE].PressedOrRepeated)
 			GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
 
 		// Draw modes
 		if (GManager.IManager->Keys[F1].JustReleased)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			GManager.IManager->Keys[F1].JustReleased = false;
 		}
 		if (GManager.IManager->Keys[F2].JustReleased) 
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			GManager.IManager->Keys[F2].JustReleased = false;
 		}
 		if (GManager.IManager->Keys[F3].JustReleased)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			GManager.IManager->Keys[F3].JustReleased = false;
 		}
 
 		if (GManager.IManager->Keys[G].JustReleased && SelectedVertexIndex != INVALID_INT) // G: Move vertex mode
@@ -63,7 +61,6 @@ int main()
 			SelectedMode = Move;
 			DragStartMousePosition = glm::vec2(MousePosition.x, MousePosition.y);
 			DragStartWorldPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
-			GManager.IManager->Keys[G].JustReleased = false;
 		}
 
 		if (GManager.IManager->Keys[ESCAPE].JustReleased && SelectedMode != None) // Escape: cancel changes
@@ -79,13 +76,12 @@ int main()
 			}
 
 			SelectedMode = None;
-			GManager.IManager->Keys[ESCAPE].JustReleased = false;
 		}
 
 		if (GManager.IManager->Keys[ENTER].JustReleased && SelectedMode != None) // Enter: confirm changes
 		{
 			SelectedMode = None;
-			GManager.IManager->Keys[ENTER].JustReleased = false;
+			NManager.SendUpdateVertexPosition(SelectedVertexIndex, MainObject.Vertices[SelectedVertexIndex].Position);
 		}
 
 		switch (SelectedMode)
@@ -108,11 +104,20 @@ int main()
 
 		MainObject.Render(GManager);
 
-		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS)
+		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS) // Left click: select vertex
 		{
 			ImVec2 MouseScreenPosition = MousePosition;
 			auto CursorWorldPosition = GManager.ScreenToWorldPosition(MouseScreenPosition);
-			SelectedVertexIndex = MainObject.GetClosestVertex(CursorWorldPosition);
+			int DesiredVertexIndex = MainObject.GetClosestVertex(CursorWorldPosition);
+			bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
+			// Ensure vertex is not grabbed by another player
+			if (!AlreadySelected && !MainObject.Vertices[DesiredVertexIndex].IsGrabbed)
+			{
+				// Deselect current vertex then select the other
+				if (SelectedVertexIndex != INVALID_INT) NManager.SendOnDeselectVertex(SelectedVertexIndex);
+				SelectedVertexIndex = DesiredVertexIndex;
+				NManager.SendOnSelectVertex(SelectedVertexIndex);
+			}
 		}
 
 		if (SelectedVertexIndex != INVALID_INT)
@@ -171,5 +176,6 @@ int main()
 		}
 
 		GManager.StandardFrameEnd();
+		GManager.IManager->ResetJustReleased();
 	}
 }

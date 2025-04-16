@@ -3,6 +3,7 @@
 
 #include "enet/enet.h"
 #include "PacketHelper.h"
+#include "Object.h"
 using namespace Samurai;
 #define MAX_CONNECTION_ATTEMPTS 5
 
@@ -20,6 +21,7 @@ namespace NetManager
     public:
 		ENetHost* Self = nullptr;
 		ENetPeer* Server = nullptr;
+        Object* MainObject = nullptr;
 
 		bool TryCreateLocalServer()
 		{
@@ -63,6 +65,78 @@ namespace NetManager
             }
         }
 
+        //
+        // Important game related event handling:
+        //
+
+        void SendOnSelectVertex(int VertexIndex)
+        {
+            if (this && this->Server)
+            {
+                Packet Event(SELECT_VERTEX);
+                appendInt(Event.data, VertexIndex);
+                sendNow(Event, Server);
+            }
+        }
+
+        void RecieveOnSelectVertex(int VertexIndex)
+        {
+            if (this && this->Server && MainObject)
+            {
+                MainObject->Vertices[VertexIndex].IsGrabbed = true;
+#ifdef _DEBUG
+                std::cout << "Network: Recieved event: OnSelectVertex\n";
+#endif
+            }
+        }
+
+        void SendOnDeselectVertex(int VertexIndex)
+        {
+            if (this && this->Server && MainObject)
+            {
+                Packet Event(DESELECT_VERTEX);
+                appendInt(Event.data, VertexIndex);
+                sendNow(Event, Server);
+            }
+        }
+
+        void RecieveOnDeselectVertex(int VertexIndex)
+        {
+            if (this && this->Server && MainObject)
+            {
+                MainObject->Vertices[VertexIndex].IsGrabbed = false;
+
+#ifdef _DEBUG
+                std::cout << "Network: Recieved event: OnDeselectVertex\n";
+#endif
+            }
+        }
+
+        void SendUpdateVertexPosition(int VertexIndex, glm::vec3 NewPosition)
+        {
+            if (this && this->Server && MainObject)
+            {
+                Packet Event(UPDATE_VERTEX_POSITION);
+                appendInt(Event.data, VertexIndex);
+                appendData<glm::vec3>(Event.data, NewPosition);
+                sendNow(Event, Server);
+            }
+        }
+
+        void RecieveUpdateVertexPosition(int VertexIndex, glm::vec3 NewPosition)
+        {
+            if (this && this->Server && MainObject)
+            {
+                MainObject->Vertices[VertexIndex].Position = NewPosition;
+
+#ifdef _DEBUG
+                std::cout << "Network: Recieved event: UpdateVertexPosition\n";
+#endif
+            }
+        }
+
+        //
+
         void RecievePackets()
         {
             ENetEvent Event;
@@ -77,19 +151,38 @@ namespace NetManager
 
                     switch (Incoming.type)
                     {
-                        case PROVIDE_JOINER_INFO: // a new player is broadcasting their name
-                        {
-                            std::string PlayerName = extractString(Incoming.data, Offset);
-                            std::cout << PlayerName << " has joined the session.\n";
-                            break;
-                        }
-                        case PROVIDE_EXISTING_PLAYER_INFOS: // server is sending us all existing players
-                        {
-                            int PlayerCount = extractInt(Incoming.data, Offset);
-                            for (int PlayerIndex = 0; PlayerIndex < PlayerCount; PlayerIndex++)
-                                std::cout << "We joined " << extractString(Incoming.data, Offset) << std::endl;
-                            break;
-                        }
+                    case PROVIDE_JOINER_INFO: // a new player is broadcasting their name
+                    {
+                        std::string PlayerName = extractString(Incoming.data, Offset);
+                        std::cout << PlayerName << " has joined the session.\n";
+                        break;
+                    }
+                    case PROVIDE_EXISTING_PLAYER_INFOS: // server is sending us all existing players
+                    {
+                        int PlayerCount = extractInt(Incoming.data, Offset);
+                        for (int PlayerIndex = 0; PlayerIndex < PlayerCount; PlayerIndex++)
+                            std::cout << "We joined " << extractString(Incoming.data, Offset) << std::endl;
+                        break;
+                    }
+                    case SELECT_VERTEX:
+                    {
+                        int VertexIndex = extractInt(Incoming.data, Offset);
+                        RecieveOnSelectVertex(VertexIndex);
+                        break;
+                    }
+                    case DESELECT_VERTEX:
+                    {
+                        int VertexIndex = extractInt(Incoming.data, Offset);
+                        RecieveOnDeselectVertex(VertexIndex);
+                        break;
+                    }
+                    case UPDATE_VERTEX_POSITION:
+                    {
+                        int VertexIndex = extractInt(Incoming.data, Offset);
+                        glm::vec3 VertexPosition = extractData<glm::vec3>(Incoming.data, Offset);
+                        RecieveUpdateVertexPosition(VertexIndex, VertexPosition);
+                        break;
+                    }
                     }
 
                     break;
