@@ -60,14 +60,22 @@ void main()
 	float Distance = length(DirectionToLight);
 	float RangeAttenuation = clamp(1.0 - (Distance / LightRange), 0.0, 1.0);
 	RangeAttenuation *= RangeAttenuation; // optional: smooth falloff
-	float Attenuation = RangeAttenuation / (Distance * Distance + 0.01);
+	float Attenuation = 1.0 / (1.0 + 0.09 * Distance + 0.032 * Distance * Distance);
+	Attenuation *= RangeAttenuation;
 
 	DirectionToLight = normalize(DirectionToLight);
 
 	float CosAngleIncidence = max(dot(normalize(SurfaceNormal), DirectionToLight), 0);
 	vec3 Intensity = LightColour * Attenuation;
 
-	DiffuseLight += Intensity * CosAngleIncidence;
+	if (CosAngleIncidence > 0.0) 
+	{
+	    DiffuseLight = Ambient + Intensity * CosAngleIncidence;
+	} 
+	else 
+	{
+	    DiffuseLight = Ambient;
+	}
 
 	// Specular Lighting
 	vec3 HalfAngle = normalize(DirectionToLight + ViewDirection);
@@ -76,6 +84,6 @@ void main()
 	BlinnTerm = pow(BlinnTerm, Shine); // Higher = Sharper Highlight
 	SpecularLight += Intensity * BlinnTerm;
 
-	FragColor = vec4((DiffuseLight * Colour.xyz + SpecularLight * Colour.xyz), 1.0f);
+	FragColor = vec4(pow(DiffuseLight * Colour.xyz + SpecularLight * Colour.xyz, vec3(1.0/2.2)), 1.0f);
 }
 )";

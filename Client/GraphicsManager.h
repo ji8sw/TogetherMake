@@ -89,9 +89,9 @@ namespace GraphicsManager
 		Input* IManager = nullptr;
 
 		// Sun Light Info:
-		glm::vec3 LightPosition = glm::vec3(0.0f, -1.0f, -0.3f);
+		glm::vec3 LightPosition = glm::vec3(5.4f, 0.0f, 0.3f);
 		glm::vec3 LightColour = glm::vec3(1.0f, 1.0f, 1.0f);
-		float LightRange = 15.0f;
+		float LightRange = 30.0f;
 
 		bool Initialize()
 		{

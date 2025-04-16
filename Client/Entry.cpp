@@ -116,15 +116,17 @@ int main()
 			glm::vec3 RayOrigin = GManager.CameraPosition; // Or extract from View matrix
 			glm::vec3 RayDirection = GManager.ScreenToWorldPosition(MousePosition);
 			int DesiredVertexIndex = MainObject.GetClosestVertexToRay(RayOrigin, RayDirection, 1);
-
-			bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
-			// Ensure vertex is not grabbed by another player
-			if (!AlreadySelected && !MainObject.Vertices[DesiredVertexIndex].IsGrabbed)
+			if (DesiredVertexIndex != INVALID_INT)
 			{
-				// Deselect current vertex then select the other
-				if (SelectedVertexIndex != INVALID_INT) NManager.SendOnDeselectVertex(SelectedVertexIndex);
-				SelectedVertexIndex = DesiredVertexIndex;
-				NManager.SendOnSelectVertex(SelectedVertexIndex);
+				bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
+				// Ensure vertex is not grabbed by another player
+				if (!AlreadySelected && !MainObject.Vertices[DesiredVertexIndex].IsGrabbed)
+				{
+					// Deselect current vertex then select the other
+					if (SelectedVertexIndex != INVALID_INT) NManager.SendOnDeselectVertex(SelectedVertexIndex);
+					SelectedVertexIndex = DesiredVertexIndex;
+					NManager.SendOnSelectVertex(SelectedVertexIndex);
+				}
 			}
 		}
 

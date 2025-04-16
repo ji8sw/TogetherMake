@@ -85,7 +85,7 @@ public:
 	// To should be world position
 	int GetClosestVertexToRay(glm::vec3 RayOrigin, glm::vec3 RayDirection, float MaxDistance = 0.1f, float* OutDistance = nullptr)
 	{
-		int ClosestIndex = -1;
+		int ClosestIndex = INVALID_INT;
 		float ClosestDistToRay = MaxDistance;
 
 		for (int Index = 0; Index < Vertices.size(); Index++)
