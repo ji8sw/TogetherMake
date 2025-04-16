@@ -63,11 +63,16 @@ public:
 
 	// for the following vertex usages, the * 5 is because our vertices are layed out as: [x, y, z, u, v]
 
-	// The following turns a vertex local position using its model matrix
+	// The following turns a vertex local position into its world position using its model matrix
 	inline glm::vec4 GetVertexWorldPosition(int VertexIndex)
 	{
-		glm::vec3 LocalVertexPos(Vertices[VertexIndex].Position);
-		return GetModel() * glm::vec4(LocalVertexPos, 1.0f);
+		return GetModel() * glm::vec4(Vertices[VertexIndex].Position, 1.0f);
+	}
+
+	// The following turns a vertex local position into its world position using its model matrix
+	inline glm::vec4 GetVertexWorldPosition(const NetVertex& Vertex)
+	{
+		return GetModel() * glm::vec4(Vertex.Position, 1.0f);
 	}
 
 	// sets the vertex world position
@@ -78,23 +83,31 @@ public:
 	}
 
 	// To should be world position
-	int GetClosestVertex(glm::vec3 To, float* OutDistance = nullptr)
+	int GetClosestVertexToRay(glm::vec3 RayOrigin, glm::vec3 RayDirection, float MaxDistance = 0.1f, float* OutDistance = nullptr)
 	{
-		int ClosestIndex = 0;
-		float ClosestDistance = 100000.0f;
+		int ClosestIndex = -1;
+		float ClosestDistToRay = MaxDistance;
 
-		for (int VertexIndex = 0; VertexIndex < Vertices.size(); VertexIndex++)
+		for (int Index = 0; Index < Vertices.size(); Index++)
 		{
-			auto VertexPosition = GetVertexWorldPosition(VertexIndex);
-			float Distance = glm::distance(glm::vec3(VertexPosition), To);
-			if (Distance < ClosestDistance)
+			glm::vec3 VertexPos = GetVertexWorldPosition(Index);
+
+			// project vertex onto ray, find closest point on ray
+			glm::vec3 RayToPoint = VertexPos - RayOrigin;
+			float Length = glm::dot(RayToPoint, RayDirection); // projection length
+			glm::vec3 ClosestPoint = RayOrigin + RayDirection * Length;
+
+			// distance from vertex to closest point on ray
+			float DistToRay = glm::distance(VertexPos, ClosestPoint);
+
+			if (DistToRay < ClosestDistToRay)
 			{
-				ClosestIndex = VertexIndex;
-				ClosestDistance = Distance;
+				ClosestDistToRay = DistToRay;
+				ClosestIndex = Index;
 			}
 		}
 
-		if (OutDistance) *OutDistance = ClosestDistance;
+		if (OutDistance) *OutDistance = ClosestDistToRay;
 		return ClosestIndex;
 	}
 

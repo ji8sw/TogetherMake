@@ -6,6 +6,7 @@
 #include <format>
 #endif
 #define SELECTION_COLOUR IM_COL32(255, 0, 0, 255)
+#define OTHER_PLAYER_SELECTION_COLOUR IM_COL32(255, 129, 0, 255)
 
 enum EMode
 {
@@ -91,9 +92,15 @@ int main()
 				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
 				glm::vec2 MouseDelta = glm::vec2(MousePosition.x, MousePosition.y) - DragStartMousePosition;
 
+				glm::vec3 CameraRight = glm::vec3(glm::inverse(GManager.View)[0]); // x
+
 				float Sensitivity = 0.00007f;
 				glm::vec2 Scale = GManager.GetWorldPerPixel(DragStartWorldPosition);
-				glm::vec3 Change = glm::vec3(-MouseDelta.x / Scale.x, -MouseDelta.y / Scale.y, 0.0f) * Sensitivity;
+
+				// convert screen space to world space movement (delta)
+				glm::vec3 Change =
+					(-MouseDelta.x * -CameraRight / Scale.x +
+						-MouseDelta.y * GManager.CameraUp / Scale.y) * Sensitivity;
 
 				glm::vec3 NewWorldPosition = DragStartWorldPosition + Change;
 
@@ -104,11 +111,12 @@ int main()
 
 		MainObject.Render(GManager);
 
-		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS) // Left click: select vertex
+		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS && SelectedMode == None) // Left click: select vertex
 		{
-			ImVec2 MouseScreenPosition = MousePosition;
-			auto CursorWorldPosition = GManager.ScreenToWorldPosition(MouseScreenPosition);
-			int DesiredVertexIndex = MainObject.GetClosestVertex(CursorWorldPosition);
+			glm::vec3 RayOrigin = GManager.CameraPosition; // Or extract from View matrix
+			glm::vec3 RayDirection = GManager.ScreenToWorldPosition(MousePosition);
+			int DesiredVertexIndex = MainObject.GetClosestVertexToRay(RayOrigin, RayDirection, 1);
+
 			bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
 			// Ensure vertex is not grabbed by another player
 			if (!AlreadySelected && !MainObject.Vertices[DesiredVertexIndex].IsGrabbed)
@@ -127,6 +135,21 @@ int main()
 
 			// Draw the circle
 			DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+		}
+
+		// if we are connected, draw circles on all vertices that are grabbed by other players
+		if (NManager.Server)
+		{
+			for (const NetVertex& Vertex : MainObject.Vertices)
+			{
+				if (Vertex.IsGrabbed)
+				{
+					auto VertexPosition = MainObject.GetVertexWorldPosition(Vertex);
+					auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
+
+					DrawList->AddCircle(VertexScreenPosition, 10.0f, OTHER_PLAYER_SELECTION_COLOUR);
+				}
+			}
 		}
 
 		if (ImGui::Begin("Together Make"))
