@@ -15,14 +15,8 @@ namespace Samurai
         PROVIDE_QUICK_RESPONSE_MESSAGE,
 
         // Matchmaking
-        REQUEST_CREATE_SESSION,
-        PROVIDE_SESSION_DETAILS,
-        REQUEST_FIND_SESSION,
-        REQUEST_FIND_SESSION_BY_ID,
         PROVIDE_JOINER_INFO,
         REQUEST_JOIN_SESSION,
-        REQUEST_SEND_INVITE,
-        PROVIDE_INVITE,
         PLAYER_LEFT,
         PROVIDE_EXISTING_PLAYER_INFOS,
 
@@ -35,11 +29,9 @@ namespace Samurai
     enum QuickResponseType  // used in cases when you dont want to send extra data, helper functions exist for sending these easily
     {
         // Matchmaking
-        SESSION_CREATED_SUCCESS,
         SESSION_JOINED_SUCCESS,
         SESSION_JOINED_FAILURE,
         SESSION_FIND_FAILURE,
-        NOTIFY_LEAVE_SESSION,
         INVALID_SESSION_ID,
         JOIN_NOT_ALLOWED
     };

@@ -173,7 +173,12 @@ int main()
 				{
 					if (NManager.Server)
 					{
+						ImGui::Text("Connected");
 
+						if (ImGui::Button("Disconnect"))
+						{
+							NManager.DisconnectFromServer();
+						}
 					}
 					else
 					{
@@ -181,9 +186,9 @@ int main()
 						ImGui::SameLine();
 						if (ImGui::Button("Connect"))
 						{
-							if (!NManager.TryConnectToMatchmakingServer())
+							if (!NManager.TryConnectToServer())
 							{
-								std::cout << "failed to connect\n";
+								std::cout << "Failed to connect...\n";
 							}
 							else // connected, send nickname to server
 							{

@@ -28,3 +28,4 @@ This project has a lot of to-do's as it was literally just created.
 ### :x: Safety (client): ensure vertices exist before accessing with them
 ### :x: Safety (server): ensure peers are registered players when recieving packets
 ### :x: Safety (server): password requirements
+### :x: Safety: ensure server and client versions are matching

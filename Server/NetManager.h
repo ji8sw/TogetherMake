@@ -21,9 +21,12 @@ namespace NetManager
     {
         ENetPeer* Connection = nullptr;
         std::string Name = "Player";
+        uint32_t AddressTotal = 0;
 
-        uint32_t GetAddressTotal() { return Connection->address.host + Connection->address.port; }
-        PlayerData(ENetPeer* InConnection = nullptr) : Connection(InConnection) {}
+        PlayerData(ENetPeer* InConnection = nullptr) : Connection(InConnection) 
+        {
+            if (Connection) AddressTotal = Connection->address.host + Connection->address.port;
+        }
     };
 
     class Manager
@@ -57,7 +60,7 @@ namespace NetManager
             {
                 if (!Player.second.Connection) continue;
                 enet_peer_disconnect(Player.second.Connection, 0);
-                AllConnections[Player.second.GetAddressTotal()] = PlayerData();
+                AllConnections[Player.second.AddressTotal] = PlayerData();
             }
         }
 
@@ -91,6 +94,13 @@ namespace NetManager
                 Result.push_back(Player.second.Connection);
             }
 
+            return Result;
+        }
+
+        std::vector<ENetPeer*> GetAllPlayerConnections()
+        {
+            std::vector<ENetPeer*> Result;
+            for (auto Player : AllConnections) Result.push_back(Player.second.Connection);
             return Result;
         }
     };

@@ -35,15 +35,22 @@ int main()
                         if (Player)
                         {
                             Player->Name = extractString(Incoming.data, Offset);
+
+                            // in the below we have to manually append the player data as using appendData on it does not go well...
                             Packet Response(PROVIDE_JOINER_INFO);
                             appendString(Response.data, Player->Name);
+                            appendInt(Response.data, Player->AddressTotal);
                             auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
                             sendBroadcastNow(AllOtherPlayers, Response);
+
                             // send all other players to the joiner
                             Packet JoinerResponse(PROVIDE_EXISTING_PLAYER_INFOS);
                             appendInt(JoinerResponse.data, AllOtherPlayers.size());
                             for (NetManager::PlayerData OtherPlayer : AllOtherPlayers)
+                            {
                                 appendString(JoinerResponse.data, OtherPlayer.Name);
+                                appendInt(JoinerResponse.data, OtherPlayer.AddressTotal);
+                            }
                             sendNow(JoinerResponse, Player->Connection);
                         }
                         break;
@@ -64,7 +71,16 @@ int main()
 
                 break;
             }
-            case ENET_EVENT_TYPE_DISCONNECT:
+            case ENET_EVENT_TYPE_DISCONNECT: // a peer disconnected
+                // if its a connected player then send a notif to all players that the player has left
+                if (NManager.AllConnections[NManager.GetAddressTotal(Event.peer)].Connection != nullptr)
+                {
+                    Packet LeaveAlert(PLAYER_LEFT);
+                    appendInt(LeaveAlert.data, NManager.GetAddressTotal(Event.peer));
+
+                    auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
+                    sendBroadcastNow(AllOtherPlayers, LeaveAlert);
+                }
                 NManager.ForgetConnection(Event.peer);
                 break;
             }

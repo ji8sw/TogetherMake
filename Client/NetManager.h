@@ -16,12 +16,20 @@ namespace NetManager
         return true;
     }
 
+    struct PlayerData
+    {
+        ENetPeer* Connection = nullptr; // Not used client side, do not access
+        std::string Name = "Player";
+        uint32_t AddressTotal = 0;
+    };
+
 	class Manager
 	{
     public:
 		ENetHost* Self = nullptr;
 		ENetPeer* Server = nullptr;
         Object* MainObject = nullptr;
+        std::unordered_map<uint32_t, PlayerData> KnownPlayers;
 
 		bool TryCreateLocalServer()
 		{
@@ -42,7 +50,7 @@ namespace NetManager
             return false;
 		}
         
-        bool TryConnectToMatchmakingServer()
+        bool TryConnectToServer()
         {
             ENetAddress ServerAddress;
             enet_address_set_host(&ServerAddress, "127.0.0.1");
@@ -63,6 +71,22 @@ namespace NetManager
                 Server = nullptr;
                 return false;
             }
+        }
+        
+        // begins disconnecting from server, no data is cleared just yet
+        void DisconnectFromServer()
+        {
+            if (Server == nullptr) return;
+
+            enet_peer_disconnect(Server, 0);
+        }
+
+        // after disconnecting from server, clear session related data
+        void OnDisconnectFromServer()
+        {
+            enet_peer_reset(Server);
+            Server = nullptr;
+            KnownPlayers.clear();
         }
 
         //
@@ -153,8 +177,21 @@ namespace NetManager
                     {
                     case PROVIDE_JOINER_INFO: // a new player is broadcasting their name
                     {
-                        std::string PlayerName = extractString(Incoming.data, Offset);
-                        std::cout << PlayerName << " has joined the session.\n";
+                        PlayerData Player(0);
+                        Player.Name = extractString(Incoming.data, Offset);
+                        Player.AddressTotal = extractInt(Incoming.data, Offset);
+                        KnownPlayers[Player.AddressTotal] = Player;
+                        std::cout << Player.Name << " has joined the session.\n";
+                        break;
+                    }
+                    case PLAYER_LEFT: // an existing player left, address total is provided to identify them
+                    {
+                        uint32_t AddressTotal = extractInt(Incoming.data, Offset);
+                        PlayerData& Player = KnownPlayers[AddressTotal];
+                        if (Player.AddressTotal != 0) // yes, we know this player
+                        {
+                            std::cout << Player.Name << " has left the session.\n";
+                        }
                         break;
                     }
                     case PROVIDE_EXISTING_PLAYER_INFOS: // server is sending us all existing players
@@ -187,6 +224,13 @@ namespace NetManager
 
                     break;
                 }
+                case ENET_EVENT_TYPE_DISCONNECT:
+                    if (Event.peer == Server) // we have disconnected from the server ( or they disconnected from us :( )
+                    {
+                        OnDisconnectFromServer();
+                        std::cout << "We left the session.\n";
+                    }
+                    break;
                 }
 
                 enet_packet_destroy(Event.packet);
