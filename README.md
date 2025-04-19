@@ -1,3 +1,4 @@
+
 # Together Make
 is a multiplayer 3D modeller using OpenGL for graphics, ENet for networking, and Dear ImGui for user interface.
 
@@ -18,6 +19,13 @@ Press F1-F3 to change rendering modes
 While a vertex is selected, press G to enter Move mode
 Mode mode: move the mouse to change the position of the vertex
 All modes: press enter to confirm your changes, or escape to cancel changes
+
+# Building
+
+To build simply read `ReadMe-Setup.md` [here](https://github.com/ji8sw/TogetherMake/blob/master/ReadMe-Setup.md)
+Then compile and run using Visual Studio 2022
+You may need `glew32.dll` and `glfw3.dll`, you can find these in the `\bin` folder next to where you found the `.lib` files.
+There is more info in `ReadMe-Setup.md`.
 
 # To-Do
 This project has a lot of to-do's as it was literally just created.
