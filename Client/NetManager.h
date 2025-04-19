@@ -220,6 +220,49 @@ namespace NetManager
                         RecieveUpdateVertexPosition(VertexIndex, VertexPosition);
                         break;
                     }
+                    case REQUEST_VERTICES: // the server has asked us to send them vertices so it can be synced to others
+                    {
+                        Packet Response(PROVIDE_VERTICES);
+                        std::vector<float> RawVertices = NetVertex::ToRawList(MainObject->Vertices); // turns each vertex into their positions
+
+                        appendInt(Response.data, RawVertices.size());
+
+                        for (float Vertex : RawVertices)
+                        {
+                            appendData<float>(Response.data, Vertex);
+                        }
+
+                        sendNow(Response, Server);
+
+#ifdef _DEBUG
+                        std::cout << "Network: Recieved event: RequestVertices\n";
+#endif
+                        break;
+                    }
+                    case PROVIDE_VERTICES: // the server has sent us vertices from the host
+                    {
+                        int VertexCount = extractInt(Incoming.data, Offset);
+                        std::vector<float> Vertices;
+                        for (int Index = 0; Index < VertexCount; Index++)
+                        {
+                            Vertices.push_back(extractData<float>(Incoming.data, Offset));
+                        }
+                        MainObject->Vertices = NetVertex::FromRawList(Vertices);
+
+#ifdef _DEBUG
+                        std::cout << "Network: Recieved event: ProvideVertices\n";
+#endif
+                        break;
+                    }
+                    case REFUSE_JOIN: // the server is telling us to leave
+                    { // cause: mismatch in game version
+                        if (Event.peer == Server)
+                        {
+                            OnDisconnectFromServer();
+                            std::cout << "Failed to join the session, possible cause:\nOutdated server or game version\n";
+                        }
+                        break;
+                    }
                     }
 
                     break;

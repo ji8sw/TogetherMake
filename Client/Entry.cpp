@@ -7,6 +7,8 @@
 #endif
 #define SELECTION_COLOUR IM_COL32(255, 0, 0, 255)
 #define OTHER_PLAYER_SELECTION_COLOUR IM_COL32(255, 129, 0, 255)
+#define SELECTION_MAX_DISTANCE 1.25f // when selecting things, if the closest is X away, nothing will be selected
+#define MAKETOGETHER_VERSION 1
 
 enum EMode
 {
@@ -64,7 +66,7 @@ int main()
 			DragStartWorldPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
 		}
 
-		if (GManager.IManager->Keys[ESCAPE].JustReleased && SelectedMode != None) // Escape: cancel changes
+		if (GManager.IManager->Keys[ESCAPE].JustReleased) // Escape: cancel changes, de-select vertices
 		{
 			switch (SelectedMode)
 			{
@@ -74,8 +76,12 @@ int main()
 				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(DragStartWorldPosition, 1.0f)); // resets vertex position to original
 				break;
 			}
+			case None:
+			{
+				SelectedVertexIndex = INVALID_INT;
+				break;
 			}
-
+			}
 			SelectedMode = None;
 		}
 
@@ -111,11 +117,11 @@ int main()
 
 		MainObject.Render(GManager);
 
-		if (glfwGetMouseButton(GManager.Window, 0) == GLFW_PRESS && SelectedMode == None) // Left click: select vertex
+		if (GManager.IManager->Keys[LEFT_MOUSE].JustReleased && SelectedMode == None) // Left click: select vertex
 		{
 			glm::vec3 RayOrigin = GManager.CameraPosition; // Or extract from View matrix
 			glm::vec3 RayDirection = GManager.ScreenToWorldPosition(MousePosition);
-			int DesiredVertexIndex = MainObject.GetClosestVertexToRay(RayOrigin, RayDirection, 1);
+			int DesiredVertexIndex = MainObject.GetClosestVertexToRay(RayOrigin, RayDirection, SELECTION_MAX_DISTANCE);
 			if (DesiredVertexIndex != INVALID_INT)
 			{
 				bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
@@ -127,6 +133,11 @@ int main()
 					SelectedVertexIndex = DesiredVertexIndex;
 					NManager.SendOnSelectVertex(SelectedVertexIndex);
 				}
+			}
+			else if (SelectedVertexIndex != INVALID_INT) // the player has a vertex selected but clicked away, probably to stop selecting.
+			{
+				SelectedVertexIndex = INVALID_INT;
+				SelectedMode = None;
 			}
 		}
 
@@ -194,7 +205,11 @@ int main()
 							{
 								Packet packet = Packet(PROVIDE_JOINER_INFO);
 								appendString(packet.data, "Player");
+								appendInt(packet.data, MAKETOGETHER_VERSION);
 								Samurai::sendNow(packet, NManager.Server); // TODO: REPLACE WITH CHOSEN NICKNAME
+
+								Packet SyncVerticesPacket = Packet(REQUEST_VERTICES);
+								Samurai::sendNow(SyncVerticesPacket, NManager.Server);
 							}
 						}
 					}

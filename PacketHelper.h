@@ -19,11 +19,14 @@ namespace Samurai
         REQUEST_JOIN_SESSION,
         PLAYER_LEFT,
         PROVIDE_EXISTING_PLAYER_INFOS,
+        REFUSE_JOIN, // could be renamed to kick
 
         // Game
         SELECT_VERTEX,
         DESELECT_VERTEX,
         UPDATE_VERTEX_POSITION,
+        REQUEST_VERTICES,
+        PROVIDE_VERTICES,
     };
 
     enum QuickResponseType  // used in cases when you dont want to send extra data, helper functions exist for sending these easily

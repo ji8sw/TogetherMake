@@ -34,10 +34,14 @@ namespace NetManager
     public:
         ENetHost* Self = nullptr;
         std::unordered_map<uint32_t, PlayerData> AllConnections;
+        std::vector<PlayerData*> VertexRequestQueue;
+        uint32_t Host = 0; // by "host" it actually means the first person who joined.
+        // they will be used as a source of accurate info such as updated vertices
 
         void AddConnection(ENetPeer* Peer)
         {
             if (!Peer) return;
+            if (Host == 0) Host = Peer->address.host + Peer->address.port;
             AllConnections[Peer->address.host + Peer->address.port] = PlayerData(Peer);
         }
 

@@ -21,11 +21,8 @@ All modes: press enter to confirm your changes, or escape to cancel changes
 
 # To-Do
 This project has a lot of to-do's as it was literally just created.
-### :white_check_mark: Improve controls: move vertex tool (G)
-### :x: Improve controls: stop camera jumping to center
-### :x: Improve controls: deselect vertex (click away)
-### :x: Improve controls: deselect vertex (cancel with escape)
-### :x: Safety (client): ensure vertices exist before accessing with them
-### :x: Safety (server): ensure peers are registered players when recieving packets
-### :x: Safety (server): password requirements
-### :x: Safety: ensure server and client versions are matching
+
+- Improve controls: stop camera jumping to center
+- Safety (client): ensure vertices exist before accessing with them
+- Safety (server): ensure peers are registered players when recieving packets
+- Safety (server): password requirements

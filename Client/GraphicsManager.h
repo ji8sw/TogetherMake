@@ -71,6 +71,8 @@ std::vector<float> CubeVertices =
 
 namespace GraphicsManager
 {
+	static ImVec2 WindowSize;
+
 	class Manager
 	{
 	public:
@@ -93,23 +95,31 @@ namespace GraphicsManager
 		glm::vec3 LightColour = glm::vec3(1.0f, 1.0f, 1.0f);
 		float LightRange = 30.0f;
 
+		static void OnFramebufferResized(GLFWwindow* ChangedWindow, int Width, int Height)
+		{
+			glViewport(0, 0, Width, Height);
+			WindowSize = ImVec2(Width, Height);
+		}
+
 		bool Initialize()
 		{
 			// GLFW
 			if (!glfwInit())
 				return false;
 
+			WindowSize = ImVec2(1920, 1080);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
-			Window = glfwCreateWindow(1920, 1080, "Together Make", nullptr, nullptr);
+			Window = glfwCreateWindow(WindowSize.x, WindowSize.y, "Together Make", nullptr, nullptr);
 			if (!Window)
 			{
 				glfwTerminate();
 				return false;
 			}
 
+			glfwSetFramebufferSizeCallback(Window, OnFramebufferResized);
 			glfwMakeContextCurrent(Window);
 			glfwSwapInterval(USE_VSYNC); // vsync
 			glewInit();
@@ -247,8 +257,8 @@ namespace GraphicsManager
 		{
 			glm::vec4 ClipSpace = Projection * View * WorldPosition;
 			glm::vec3 NDC = glm::vec3(ClipSpace) / ClipSpace.w;
-			float ScreenX = (NDC.x * 0.5f + 0.5f) * 1920;
-			float ScreenY = (1.0f - (NDC.y * 0.5f + 0.5f)) * 1080; // flip Y for top-left
+			float ScreenX = (NDC.x * 0.5f + 0.5f) * WindowSize.x;
+			float ScreenY = (1.0f - (NDC.y * 0.5f + 0.5f)) * WindowSize.y; // flip Y for top-left
 			return ImVec2(ScreenX, ScreenY);
 		}
 
@@ -259,8 +269,8 @@ namespace GraphicsManager
 
 		inline glm::vec3 ScreenToWorldPosition(ImVec2 ScreenPosition)
 		{
-			float NDCX = (2.0f * ScreenPosition.x) / 1920.0f - 1.0f;
-			float NDCY = 1.0f - (2.0f * ScreenPosition.y) / 1080.0f; // Flip Y
+			float NDCX = (2.0f * ScreenPosition.x) / WindowSize.x - 1.0f;
+			float NDCY = 1.0f - (2.0f * ScreenPosition.y) / WindowSize.y; // Flip Y
 			glm::vec4 RayClip = glm::vec4(NDCX, NDCY, -1.0f, 1.0f);
 			glm::vec4 RayEye = glm::inverse(Projection) * RayClip;
 			RayEye = glm::vec4(RayEye.x, RayEye.y, -1.0f, 0.0f);

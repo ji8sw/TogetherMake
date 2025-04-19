@@ -1,6 +1,7 @@
 #include "NetManager.h"
 #include <iostream>
 #include <vector>
+#define MAKETOGETHER_VERSION 1
 
 int main()
 {
@@ -35,6 +36,14 @@ int main()
                         if (Player)
                         {
                             Player->Name = extractString(Incoming.data, Offset);
+                            int PlayerVersion = extractInt(Incoming.data, Offset);
+
+                            if (PlayerVersion != MAKETOGETHER_VERSION)
+                            { // the players game is out of date so we will tell them to disconnect
+                                Packet Response(REFUSE_JOIN);
+                                sendNow(Response, Player->Connection);
+                                break;
+                            }
 
                             // in the below we have to manually append the player data as using appendData on it does not go well...
                             Packet Response(PROVIDE_JOINER_INFO);
@@ -64,6 +73,34 @@ int main()
                         {
                             auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
                             sendBroadcastNow(AllOtherPlayers, Incoming);
+                        }
+                        break;
+                    }
+                    case REQUEST_VERTICES: // a player is asking to sync vertices
+                    { // we will ask the host to provide us with vertices
+                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
+                        if (NManager.Host == 0) break;
+                        auto& Host = NManager.AllConnections[NManager.Host];
+                        if (Player && Player->Connection != Host.Connection)
+                        {
+                            Packet HostRequest(REQUEST_VERTICES);
+                            sendNow(HostRequest, Host.Connection);
+                            NManager.VertexRequestQueue.push_back(Player);
+                        }
+                        break;
+                    }
+                    case PROVIDE_VERTICES: // the host has provided us with vertices
+                    { // we will send them to everyone who requested an update
+                        // the list will be a list of raw floats in the format: [x, y, z, u, v]
+                        // the recipient will format that back into NetVertex
+                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
+                        auto& Host = NManager.AllConnections[NManager.Host];
+                        if (Player && Player->Connection == Host.Connection)
+                        {
+                            for (const auto Requester : NManager.VertexRequestQueue)
+                            {
+                                sendNow(Incoming, Requester->Connection);
+                            }
                         }
                         break;
                     }
