@@ -8,12 +8,38 @@
 #define SELECTION_COLOUR IM_COL32(255, 0, 0, 255)
 #define OTHER_PLAYER_SELECTION_COLOUR IM_COL32(255, 129, 0, 255)
 #define SELECTION_MAX_DISTANCE 1.25f // when selecting things, if the closest is X away, nothing will be selected
+#define SMOOTH_MOVE // syncs vertices every frame instead of when changes are confirmed
 #define MAKETOGETHER_VERSION 1
 
 enum EMode
 {
 	None,
 	Move
+};
+
+enum EStoredActionType
+{
+	MOVE_VERTEX
+};
+
+struct StoredActionData
+{
+	EStoredActionType Type;
+
+	virtual void Execute()
+	{
+
+	}
+};
+
+struct MoveVertexAction : public StoredActionData
+{
+
+
+	void Execute()
+	{
+
+	}
 };
 
 int main()
@@ -34,6 +60,7 @@ int main()
 	EMode SelectedMode = None;
 	glm::vec3 DragStartWorldPosition;
 	glm::vec2 DragStartMousePosition;
+	std::vector<
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
@@ -74,6 +101,11 @@ int main()
 			{
 				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
 				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(DragStartWorldPosition, 1.0f)); // resets vertex position to original
+				
+#ifdef SMOOTH_MOVE
+				NManager.SendUpdateVertexPosition(SelectedVertexIndex, DragStartWorldPosition);
+#endif
+
 				break;
 			}
 			case None:
@@ -85,7 +117,7 @@ int main()
 			SelectedMode = None;
 		}
 
-		if (GManager.IManager->Keys[ENTER].JustReleased && SelectedMode != None) // Enter: confirm changes
+		if (GManager.IManager->Keys[ENTER].JustReleased && SelectedMode != None && MainObject.VertexDoesExist(SelectedVertexIndex)) // Enter: confirm changes
 		{
 			SelectedMode = None;
 			NManager.SendUpdateVertexPosition(SelectedVertexIndex, MainObject.Vertices[SelectedVertexIndex].Position);
@@ -95,7 +127,7 @@ int main()
 		{
 			case Move:
 			{
-				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
+				if (SelectedVertexIndex == INVALID_INT) { SelectedMode = None; break; }
 				glm::vec2 MouseDelta = glm::vec2(MousePosition.x, MousePosition.y) - DragStartMousePosition;
 
 				glm::vec3 CameraRight = glm::vec3(glm::inverse(GManager.View)[0]); // x
@@ -110,7 +142,25 @@ int main()
 
 				glm::vec3 NewWorldPosition = DragStartWorldPosition + Change;
 
+				if (GManager.IManager->Keys[S].JustReleased) // S: snap to closest vertex
+				{ // we will find closest vertex and go to it
+					int ClosestVertex = MainObject.GetClosestVertexToPosition(NewWorldPosition, 100.0f, SelectedVertexIndex);
+					if (MainObject.VertexDoesExist(ClosestVertex))
+					{
+						NewWorldPosition = MainObject.Vertices[ClosestVertex].Position;
+						SelectedMode = None;
+
+#ifndef SMOOTH_MOVE // if its not defined, the vertex movement change wont be networked
+						NManager.SendUpdateVertexPosition(SelectedVertexIndex, NewWorldPosition);
+#endif
+					}
+				}
+
 				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(NewWorldPosition, 1.0f));
+
+#ifdef SMOOTH_MOVE
+				NManager.SendUpdateVertexPosition(SelectedVertexIndex, NewWorldPosition);
+#endif
 				break;
 			}
 		}
@@ -122,7 +172,7 @@ int main()
 			glm::vec3 RayOrigin = GManager.CameraPosition; // Or extract from View matrix
 			glm::vec3 RayDirection = GManager.ScreenToWorldPosition(MousePosition);
 			int DesiredVertexIndex = MainObject.GetClosestVertexToRay(RayOrigin, RayDirection, SELECTION_MAX_DISTANCE);
-			if (DesiredVertexIndex != INVALID_INT)
+			if (DesiredVertexIndex != INVALID_INT && MainObject.VertexDoesExist(DesiredVertexIndex))
 			{
 				bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
 				// Ensure vertex is not grabbed by another player
@@ -141,7 +191,7 @@ int main()
 			}
 		}
 
-		if (SelectedVertexIndex != INVALID_INT)
+		if (MainObject.VertexDoesExist(SelectedVertexIndex))
 		{
 			auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
 			auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
@@ -172,6 +222,10 @@ int main()
 				if (ImGui::BeginTabItem("Material"))
 				{
 					ImGui::ColorPicker4("Colour", (float*)&MainObject.Colour, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Sun"))
+				{
 					ImGui::DragFloat3("Sun Position", (float*)&GManager.LightPosition, 0.1f);
 					ImGui::DragFloat3("Sun Colour", (float*)&GManager.LightColour, 0.1f);
 					ImGui::DragFloat("Sun Range", &GManager.LightRange, 0.1f);
@@ -206,6 +260,7 @@ int main()
 								Packet packet = Packet(PROVIDE_JOINER_INFO);
 								appendString(packet.data, "Player");
 								appendInt(packet.data, MAKETOGETHER_VERSION);
+								appendString(packet.data, ""); // password
 								Samurai::sendNow(packet, NManager.Server); // TODO: REPLACE WITH CHOSEN NICKNAME
 
 								Packet SyncVerticesPacket = Packet(REQUEST_VERTICES);

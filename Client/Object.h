@@ -61,11 +61,18 @@ public:
 	inline glm::mat4 GetModel() { return glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0)); }
 	std::vector<NetVertex> Vertices = NetVertex::FromRawList(CubeVertices);
 
+	inline bool VertexDoesExist(int VertexIndex)
+	{
+		return VertexIndex < Vertices.size() && VertexIndex >= 0;
+	}
+
 	// for the following vertex usages, the * 5 is because our vertices are layed out as: [x, y, z, u, v]
 
 	// The following turns a vertex local position into its world position using its model matrix
 	inline glm::vec4 GetVertexWorldPosition(int VertexIndex)
 	{
+		if (!VertexDoesExist(VertexIndex)) return glm::vec4(0);
+
 		return GetModel() * glm::vec4(Vertices[VertexIndex].Position, 1.0f);
 	}
 
@@ -78,8 +85,35 @@ public:
 	// sets the vertex world position
 	void SetVertexWorldPosition(int VertexIndex, glm::vec4 NewWorldPosition)
 	{
+		if (!VertexDoesExist(VertexIndex)) return;
+
 		glm::vec4 LocalPosition = glm::inverse(GetModel()) * NewWorldPosition;
 		Vertices[VertexIndex].Position = LocalPosition;
+	}
+
+	int GetClosestVertexToPosition(glm::vec3 To, float MaxDistance = 0.1f, int Exclude = INVALID_INT, float* OutDistance = nullptr)
+	{
+		int ClosestIndex = INVALID_INT;
+		float ClosestDistToPos = MaxDistance;
+
+		for (int Index = 0; Index < Vertices.size(); Index++)
+		{
+			if (Index == Exclude) continue;
+
+			glm::vec3 VertexPos = GetVertexWorldPosition(Index);
+
+			// distance from vertex to closest point on ray
+			float DistToPos = glm::distance(VertexPos, To);
+
+			if (DistToPos < ClosestDistToPos)
+			{
+				ClosestDistToPos = DistToPos;
+				ClosestIndex = Index;
+			}
+		}
+
+		if (OutDistance) *OutDistance = ClosestDistToPos;
+		return ClosestIndex;
 	}
 
 	// To should be world position

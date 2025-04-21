@@ -79,12 +79,16 @@ namespace GraphicsManager
 		GLFWwindow* Window = nullptr;
 		unsigned int VBO, VAO, EBO;
 		unsigned int PrimaryShaderProgram;
+
+		// Camera
 		glm::mat4 View = glm::mat4(1.0f);
 		glm::mat4 Projection = glm::mat4(1.0f);
 		glm::vec3 CameraPosition = glm::vec3(0.0f, 0.0f, 15.0f);
 		glm::vec3 CameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 CameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 		float CameraFOV = 45.0f;
+		float PitchRad = 0.0f;
+		float YawRad = 0.0f;
 		double DeltaTime = 0.0f;
 		std::chrono::high_resolution_clock::time_point PreviousTime;
 		std::vector<unsigned int> ShadersToDestroyOnCleanup;
@@ -299,7 +303,7 @@ namespace GraphicsManager
 			glm::vec2 MouseDelta = glm::vec2(IManager->XChange, IManager->YChange);
 
 			// 2. Adjust Yaw and Pitch based on the delta
-			float Sensitivity = 0.1f; // Adjust sensitivity for smooth camera movement
+			float Sensitivity = 0.1f; // TODO: custom sensitivity
 			IManager->Yaw += MouseDelta.x * Sensitivity;
 			IManager->Pitch -= MouseDelta.y * Sensitivity; // Invert Y for typical camera control
 

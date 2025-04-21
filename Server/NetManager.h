@@ -35,6 +35,7 @@ namespace NetManager
         ENetHost* Self = nullptr;
         std::unordered_map<uint32_t, PlayerData> AllConnections;
         std::vector<PlayerData*> VertexRequestQueue;
+        std::string Password = "";
         uint32_t Host = 0; // by "host" it actually means the first person who joined.
         // they will be used as a source of accurate info such as updated vertices
 

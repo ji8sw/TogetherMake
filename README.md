@@ -13,12 +13,15 @@ the networking is based on Samurai, which is a networking solution I made to han
 the interface is using Dear ImGui, it is currently very simple, the main attraction is that users can select vertices on the object, which will later be used for modelling capabilties
 
 # Controls
-Hold middle mouse (scrollwheel) and move your mouse to rotate the camera around the origin
-Click on corners of the cube to select vertices
-Press F1-F3 to change rendering modes
-While a vertex is selected, press G to enter Move mode
-Mode mode: move the mouse to change the position of the vertex
-All modes: press enter to confirm your changes, or escape to cancel changes
+- Hold middle mouse (scrollwheel) and move your mouse to rotate the camera around the origin
+- Click on corners of the cube to select vertices
+- Press F1-F3 to change rendering modes
+- While a vertex is selected:
+	- press G to enter Move mode
+- While in Move Mode:
+	- press S to snap to nearest vertex (will confirm changes)
+- Mode mode: move the mouse to change the position of the vertex
+- All modes: press enter to confirm your changes, or escape to cancel changes
 
 # Building
 
@@ -30,7 +33,6 @@ There is more info in `ReadMe-Setup.md`.
 # To-Do
 This project has a lot of to-do's as it was literally just created.
 
-- Improve controls: stop camera jumping to center
-- Safety (client): ensure vertices exist before accessing with them
-- Safety (server): ensure peers are registered players when recieving packets
-- Safety (server): password requirements
+- Controls: stop camera jumping to center
+- Controls: Un-do/Re-do (done by storing vertex movement changes)
+- Misc: server configuration file (for password)

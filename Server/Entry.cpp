@@ -19,69 +19,73 @@ int main()
             switch (Event.type)
             {
             case ENET_EVENT_TYPE_CONNECT:
-                std::cout << "A new peer connected from " << IpToString(Event.peer->address.host) << ":" << Event.peer->address.port << std::endl;
+            { // we will handle their join later via PROVIDE_JOINER_INFO
                 NManager.AddConnection(Event.peer);
                 break;
+            }
             case ENET_EVENT_TYPE_RECEIVE:
             {
                 Packet Incoming = Packet::deserialize((char*)Event.packet->data, Event.packet->dataLength);
                 size_t Offset = 0;
+                auto Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
+                if (!Player) break; // we only communicate with existing players, k thx bye
 
                 switch (Incoming.type)
                 {
                     case PROVIDE_JOINER_INFO: // a new player is broadcasting their name
                     { // we will send their name to all OTHER players (hence GetAllPlayerConnectionsExcept)
-                        // We might use the player name later
-                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
-                        if (Player)
-                        {
-                            Player->Name = extractString(Incoming.data, Offset);
-                            int PlayerVersion = extractInt(Incoming.data, Offset);
+                        Player->Name = extractString(Incoming.data, Offset);
+                        int PlayerVersion = extractInt(Incoming.data, Offset);
+                        std::string ProvidedPassword = extractString(Incoming.data, Offset);
 
-                            if (PlayerVersion != MAKETOGETHER_VERSION)
-                            { // the players game is out of date so we will tell them to disconnect
-                                Packet Response(REFUSE_JOIN);
-                                sendNow(Response, Player->Connection);
-                                break;
-                            }
-
-                            // in the below we have to manually append the player data as using appendData on it does not go well...
-                            Packet Response(PROVIDE_JOINER_INFO);
-                            appendString(Response.data, Player->Name);
-                            appendInt(Response.data, Player->AddressTotal);
-                            auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
-                            sendBroadcastNow(AllOtherPlayers, Response);
-
-                            // send all other players to the joiner
-                            Packet JoinerResponse(PROVIDE_EXISTING_PLAYER_INFOS);
-                            appendInt(JoinerResponse.data, AllOtherPlayers.size());
-                            for (NetManager::PlayerData OtherPlayer : AllOtherPlayers)
-                            {
-                                appendString(JoinerResponse.data, OtherPlayer.Name);
-                                appendInt(JoinerResponse.data, OtherPlayer.AddressTotal);
-                            }
-                            sendNow(JoinerResponse, Player->Connection);
+                        if (PlayerVersion != MAKETOGETHER_VERSION)
+                        { // the players game is out of date so we will tell them to disconnect
+                            Packet Response(REFUSE_JOIN);
+                            sendNow(Response, Player->Connection);
+                            NManager.ForgetConnection(Player->Connection);
+                            break;
                         }
+
+                        if (!NManager.Password.empty() && ProvidedPassword != NManager.Password)
+                        { // incorrect password, we will tell them to disconnect
+                            Packet Response(REFUSE_JOIN);
+                            sendNow(Response, Player->Connection);
+                            NManager.ForgetConnection(Player->Connection);
+                            break;
+                        }
+
+                        // in the below we have to manually append the player data as using appendData on it does not go well...
+                        Packet Response(PROVIDE_JOINER_INFO);
+                        appendString(Response.data, Player->Name);
+                        appendInt(Response.data, Player->AddressTotal);
+                        auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
+                        sendBroadcastNow(AllOtherPlayers, Response);
+
+                        // send all other players to the joiner
+                        Packet JoinerResponse(PROVIDE_EXISTING_PLAYER_INFOS);
+                        appendInt(JoinerResponse.data, AllOtherPlayers.size());
+                        for (NetManager::PlayerData OtherPlayer : AllOtherPlayers)
+                        {
+                            appendString(JoinerResponse.data, OtherPlayer.Name);
+                            appendInt(JoinerResponse.data, OtherPlayer.AddressTotal);
+                        }
+                        sendNow(JoinerResponse, Player->Connection);
+                        std::cout << Player->Name << " has joined the session." << std::endl;
                         break;
                     }
                     case SELECT_VERTEX:
                     case DESELECT_VERTEX:
                     case UPDATE_VERTEX_POSITION:
                     {
-                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
-                        if (Player)
-                        {
-                            auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
-                            sendBroadcastNow(AllOtherPlayers, Incoming);
-                        }
+                        auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
+                        sendBroadcastNow(AllOtherPlayers, Incoming);
                         break;
                     }
                     case REQUEST_VERTICES: // a player is asking to sync vertices
                     { // we will ask the host to provide us with vertices
-                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
                         if (NManager.Host == 0) break;
                         auto& Host = NManager.AllConnections[NManager.Host];
-                        if (Player && Player->Connection != Host.Connection)
+                        if (Player->Connection != Host.Connection)
                         {
                             Packet HostRequest(REQUEST_VERTICES);
                             sendNow(HostRequest, Host.Connection);
@@ -93,9 +97,8 @@ int main()
                     { // we will send them to everyone who requested an update
                         // the list will be a list of raw floats in the format: [x, y, z, u, v]
                         // the recipient will format that back into NetVertex
-                        NetManager::PlayerData* Player = &NManager.AllConnections[NManager.GetAddressTotal(Event.peer)];
                         auto& Host = NManager.AllConnections[NManager.Host];
-                        if (Player && Player->Connection == Host.Connection)
+                        if (Player->Connection == Host.Connection)
                         {
                             for (const auto Requester : NManager.VertexRequestQueue)
                             {
