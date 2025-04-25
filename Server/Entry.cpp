@@ -117,7 +117,14 @@ int main()
                 {
                     Packet LeaveAlert(PLAYER_LEFT);
                     appendInt(LeaveAlert.data, NManager.GetAddressTotal(Event.peer));
-
+                    if (NManager.GetAddressTotal(Event.peer) == NManager.Host)
+                    { // Host migration: set host to the next available player, if they exist
+                        if (NManager.AllConnections.size() > 1)
+                        {
+                            NManager.Host = NManager.AllConnections[1].AddressTotal;
+                            std::cout << "The host has migrated to " << NManager.AllConnections[1].Name << "\n";
+                        }
+                    }
                     auto AllOtherPlayers = NManager.GetAllPlayerConnectionsExcept(Event.peer);
                     sendBroadcastNow(AllOtherPlayers, LeaveAlert);
                 }

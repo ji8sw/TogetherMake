@@ -82,6 +82,7 @@ int main()
 	GManager.SetupStandardShaders();
 	NManager.MainObject = &MainObject;
 	GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
+	std::string NameInput = "Player";
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
@@ -287,7 +288,9 @@ int main()
 					else
 					{
 						ImGui::Text("Not Connected...");
-						ImGui::SameLine();
+
+						ImGui::InputText("Nickname", &NameInput);
+
 						if (ImGui::Button("Connect"))
 						{
 							if (!NManager.TryConnectToServer())
@@ -297,7 +300,7 @@ int main()
 							else // connected, send nickname to server
 							{
 								Packet packet = Packet(PROVIDE_JOINER_INFO);
-								appendString(packet.data, "Player");
+								appendString(packet.data, NameInput.c_str());
 								appendInt(packet.data, MAKETOGETHER_VERSION);
 								appendString(packet.data, ""); // password
 								Samurai::sendNow(packet, NManager.Server); // TODO: REPLACE WITH CHOSEN NICKNAME
@@ -321,4 +324,5 @@ int main()
 	//GManager.Cleanup();
 	for (auto Action : PreviousActions)
 		delete Action;
+	NManager.Cleanup();
 }

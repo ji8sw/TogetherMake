@@ -89,6 +89,13 @@ namespace NetManager
             KnownPlayers.clear();
         }
 
+        void Cleanup()
+        {
+            DisconnectFromServer();
+            enet_host_destroy(Self);
+            KnownPlayers.clear();
+        }
+
         //
         // Important game related event handling:
         //

@@ -79,6 +79,13 @@ void Input::SetCallbacks()
 				printf("An exception was caused by glfwSetCursorEnterCallback (did you auto size the window?)\n");
 #endif
 			}
+
+	glfwSetCharCallback(Window, [](GLFWwindow* Window, unsigned int Codepoint)
+	{
+		Input* Instance = static_cast<Input*>(glfwGetWindowUserPointer(Window));
+		if (Instance && Window == Instance->Window)
+			Instance->CharPressedCallback(Window, Codepoint);
+	});
 		});
 }
 
@@ -128,6 +135,8 @@ void Input::KeyCallback(GLFWwindow* Window, int Keycode, int ScanCode, int Actio
 		Keys[CTRL].JustReleased = true;
 		break;
 	}
+	
+	ImGui_ImplGlfw_KeyCallback(Window, Keycode, ScanCode, Action, Mods);
 }
 
 void Input::MouseButtonCallback(GLFWwindow* Window, int Button, int Action, int Mods)
@@ -190,4 +199,9 @@ void Input::CursorPositionCallback(GLFWwindow* Window, double X, double Y)
 
 	Yaw += static_cast<float>(XChange);
 	Pitch += static_cast<float>(YChange);
+}
+
+void Input::CharPressedCallback(GLFWwindow* Window, unsigned int Codepoint)
+{
+	ImGui_ImplGlfw_CharCallback(Window, Codepoint);
 }

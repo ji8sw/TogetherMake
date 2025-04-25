@@ -84,4 +84,5 @@ private:
     virtual void ScrollCallback(GLFWwindow* Window, double X, double Y);
     virtual void CursorEnterCallback(GLFWwindow* Window, int Entered);
     virtual void CursorPositionCallback(GLFWwindow* Window, double X, double Y);
+    virtual void CharPressedCallback(GLFWwindow* Window, unsigned int Codepoint);
 };
