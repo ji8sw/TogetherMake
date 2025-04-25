@@ -17,6 +17,7 @@
     </ClInclude>
     <ClInclude Include="Input.h" />
     <ClInclude Include="..\PacketHelper.h" />
+    <ClInclude Include="StoredAction.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Graphics">

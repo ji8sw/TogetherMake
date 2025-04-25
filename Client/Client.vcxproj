@@ -29,6 +29,7 @@
     <ClInclude Include="NetManager.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="ShaderCode.h" />
+    <ClInclude Include="StoredAction.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

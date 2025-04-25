@@ -1,6 +1,8 @@
 #include "NetManager.h"
 #include "GraphicsManager.h"
 #include "Object.h"
+#include "StoredAction.h"
+
 #ifdef _DEBUG
 #include <iostream>
 #include <format>
@@ -17,50 +19,69 @@ enum EMode
 	Move
 };
 
-enum EStoredActionType
-{
-	MOVE_VERTEX
-};
+NetManager::Manager NManager;
+Object MainObject;
+int SelectedVertexIndex = -1;
+EMode SelectedMode = None;
 
-struct StoredActionData
+class MoveVertexAction : public StoredActionData
 {
-	EStoredActionType Type;
+public:
 
-	virtual void Execute()
+	int VertexIndex = INVALID_INT;
+	glm::vec3 From;
+	glm::vec3 To;
+	glm::vec2 MouseStart;
+	bool Finished = false;
+
+	StoredActionData* Execute(bool Networked)
 	{
+		if (VertexIndex == INVALID_INT) return this;
 
+		MainObject.SetVertexWorldPosition(VertexIndex, glm::vec4(To, 1.0f));
+
+		if (Networked && NManager.Server)
+			NManager.SendUpdateVertexPosition(VertexIndex, To);
+
+		return this;
+	}
+
+	StoredActionData* Reverse(bool Networked)
+	{
+		if (VertexIndex == INVALID_INT) return this;
+
+		MainObject.SetVertexWorldPosition(VertexIndex, glm::vec4(From, 1.0f));
+
+		if (Networked && NManager.Server)
+			NManager.SendUpdateVertexPosition(VertexIndex, From);
+
+		return this;
+	}
+
+	MoveVertexAction(int InVertexIndex, glm::vec2 InMouseStart) :
+		VertexIndex(InVertexIndex)
+	{
+		MouseStart = InMouseStart;
+		From = MainObject.GetVertexWorldPosition(InVertexIndex);
 	}
 };
 
-struct MoveVertexAction : public StoredActionData
-{
-
-
-	void Execute()
-	{
-
-	}
-};
+MoveVertexAction* MoveVertexData = nullptr;
+std::vector<StoredActionData*> PreviousActions;
 
 int main()
 {
 	// Initialize local server, we won't connect yet.
 	if (!NetManager::InitializeENet()) throw "Failed to start.";
-	NetManager::Manager NManager = NetManager::Manager();
+	NManager = NetManager::Manager();
 	if (!NManager.TryCreateLocalServer()) throw "Failed to start.";
 
 	// Initialize OpenGL (creates window and whatnot)
 	GraphicsManager::Manager GManager = GraphicsManager::Manager();
 	if (!GManager.Initialize()) throw "Failed to start.";
 	GManager.SetupStandardShaders();
-	Object MainObject;
 	NManager.MainObject = &MainObject;
 	GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
-	int SelectedVertexIndex = -1;
-	EMode SelectedMode = None;
-	glm::vec3 DragStartWorldPosition;
-	glm::vec2 DragStartMousePosition;
-	std::vector<
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
@@ -89,8 +110,7 @@ int main()
 		if (GManager.IManager->Keys[G].JustReleased && SelectedVertexIndex != INVALID_INT) // G: Move vertex mode
 		{
 			SelectedMode = Move;
-			DragStartMousePosition = glm::vec2(MousePosition.x, MousePosition.y);
-			DragStartWorldPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
+			MoveVertexData = new MoveVertexAction(SelectedVertexIndex, glm::vec2(MousePosition.x, MousePosition.y));
 		}
 
 		if (GManager.IManager->Keys[ESCAPE].JustReleased) // Escape: cancel changes, de-select vertices
@@ -100,12 +120,12 @@ int main()
 			case Move:
 			{
 				if (SelectedVertexIndex == INVALID_INT) SelectedMode = None;
-				MainObject.SetVertexWorldPosition(SelectedVertexIndex, glm::vec4(DragStartWorldPosition, 1.0f)); // resets vertex position to original
-				
-#ifdef SMOOTH_MOVE
-				NManager.SendUpdateVertexPosition(SelectedVertexIndex, DragStartWorldPosition);
-#endif
 
+#ifdef SMOOTH_MOVE
+				MoveVertexData->Reverse(true);
+#else
+				MoveVertexData->Reverse(false);
+#endif
 				break;
 			}
 			case None:
@@ -119,8 +139,27 @@ int main()
 
 		if (GManager.IManager->Keys[ENTER].JustReleased && SelectedMode != None && MainObject.VertexDoesExist(SelectedVertexIndex)) // Enter: confirm changes
 		{
+			switch (SelectedMode)
+			{
+			case Move:
+			{
+				NManager.SendUpdateVertexPosition(SelectedVertexIndex, MainObject.Vertices[SelectedVertexIndex].Position);
+				MoveVertexData->Finished = true;
+				MoveVertexData->To = MainObject.Vertices[SelectedVertexIndex].Position;
+				PreviousActions.push_back(MoveVertexData);
+				break;
+			}
+			case None:
+			{
+				break;
+			}
+			}
 			SelectedMode = None;
-			NManager.SendUpdateVertexPosition(SelectedVertexIndex, MainObject.Vertices[SelectedVertexIndex].Position);
+		}
+
+		if (GManager.IManager->Keys[CTRL].JustReleased && GManager.IManager->Keys[Z].JustReleased) // CTRL + Z: Reverse action / undo
+		{
+			if (!PreviousActions.empty()) PreviousActions[PreviousActions.size() - 1]->Reverse();
 		}
 
 		switch (SelectedMode)
@@ -128,19 +167,19 @@ int main()
 			case Move:
 			{
 				if (SelectedVertexIndex == INVALID_INT) { SelectedMode = None; break; }
-				glm::vec2 MouseDelta = glm::vec2(MousePosition.x, MousePosition.y) - DragStartMousePosition;
+				glm::vec2 MouseDelta = glm::vec2(MousePosition.x, MousePosition.y) - MoveVertexData->MouseStart;
 
 				glm::vec3 CameraRight = glm::vec3(glm::inverse(GManager.View)[0]); // x
 
 				float Sensitivity = 0.00007f;
-				glm::vec2 Scale = GManager.GetWorldPerPixel(DragStartWorldPosition);
+				glm::vec2 Scale = GManager.GetWorldPerPixel(MoveVertexData->From);
 
 				// convert screen space to world space movement (delta)
 				glm::vec3 Change =
 					(-MouseDelta.x * -CameraRight / Scale.x +
 						-MouseDelta.y * GManager.CameraUp / Scale.y) * Sensitivity;
 
-				glm::vec3 NewWorldPosition = DragStartWorldPosition + Change;
+				glm::vec3 NewWorldPosition = MoveVertexData->From + Change;
 
 				if (GManager.IManager->Keys[S].JustReleased) // S: snap to closest vertex
 				{ // we will find closest vertex and go to it
@@ -278,4 +317,8 @@ int main()
 		GManager.StandardFrameEnd();
 		GManager.IManager->ResetJustReleased();
 	}
+
+	//GManager.Cleanup();
+	for (auto Action : PreviousActions)
+		delete Action;
 }

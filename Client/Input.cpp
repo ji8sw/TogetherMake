@@ -25,10 +25,6 @@ void Input::SetStandardKeys()
 	Keys[ARROW_RIGHT] = { GLFW_KEY_RIGHT };
 	Keys[ARROW_UP] = { GLFW_KEY_UP };
 	Keys[ARROW_DOWN] = { GLFW_KEY_DOWN };
-	Keys[LSHIFT] = { GLFW_KEY_LEFT_SHIFT };
-	Keys[LCTRL] = { GLFW_KEY_LEFT_CONTROL };
-	Keys[RSHIFT] = { GLFW_KEY_RIGHT_SHIFT };
-	Keys[RCTRL] = { GLFW_KEY_RIGHT_CONTROL };
 	Keys[ENTER] = { GLFW_KEY_ENTER };
 	Keys[PAGE_UP] = { GLFW_KEY_PAGE_UP };
 	Keys[PAGE_DOWN] = { GLFW_KEY_PAGE_DOWN };
@@ -120,6 +116,17 @@ void Input::KeyCallback(GLFWwindow* Window, int Keycode, int ScanCode, int Actio
 			if (Action == GLFW_RELEASE) Key.JustReleased = true;
 			Key.State = Action;
 		}
+	}
+
+	// Additionally pressed modifier keys such as shift and whatnot
+	switch (Mods)
+	{
+	case 1:
+		Keys[SHIFT].JustReleased = true;
+		break;
+	case 2:
+		Keys[CTRL].JustReleased = true;
+		break;
 	}
 }
 

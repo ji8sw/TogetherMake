@@ -57,7 +57,7 @@ struct NetVertex
 class Object
 {
 public:
-	ImVec4 Colour = ImVec4(0.9f, 0.9f, 0.9f, 1.0f);
+	ImVec4 Colour = ImVec4(0.5f, 0.3f, 0.0f, 1.0f);
 	inline glm::mat4 GetModel() { return glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0)); }
 	std::vector<NetVertex> Vertices = NetVertex::FromRawList(CubeVertices);
 

@@ -34,5 +34,4 @@ There is more info in `ReadMe-Setup.md`.
 This project has a lot of to-do's as it was literally just created.
 
 - Controls: stop camera jumping to center
-- Controls: Un-do/Re-do (done by storing vertex movement changes)
 - Misc: server configuration file (for password)
