@@ -1,15 +1,32 @@
 #include "NetManager.h"
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include "Value.h"
 #define MAKETOGETHER_VERSION 1
 
-int main()
+int main(int argc, char* argv[])
 {
 	// Initialize server.
 	if (!NetManager::InitializeENet()) throw "Failed to start.";
 	NetManager::Manager NManager = NetManager::Manager();
 	if (!NManager.TryCreateLocalServer()) throw "Failed to start.";
 	bool Running = true;
+
+    // Load configuration from parameter if provided.
+    Value::Set Configuration;
+    if (argc >= 2)
+    {
+        const char* ServerConfigPath = argv[1];
+        std::fstream ServerConfigFile(ServerConfigPath);
+        if (!Configuration.AppendFrom(ServerConfigPath))
+            std::cout << "Failed to open provided server configuration, it will be ignored.\n";
+    }
+
+    // Load password from config
+    auto PasswordKey = Configuration.Get("Password");
+    if (PasswordKey) NManager.Password = PasswordKey->value;
+    if (!NManager.Password.empty()) std::cout << "Server Password: " << NManager.Password << std::endl;
 
     while (Running)
     {

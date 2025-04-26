@@ -1,5 +1,6 @@
 #pragma once
 #include "GraphicsManager.h"
+#include "NetManager.h"
 
 // contains vertex position and information related to network status
 struct NetVertex

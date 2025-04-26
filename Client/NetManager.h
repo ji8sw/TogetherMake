@@ -166,6 +166,18 @@ namespace NetManager
             }
         }
 
+        // todo: this should probably be its own packet and be host checked
+        void UpdateAllVertices()
+        {
+            if (!Server) return;
+
+            for (int Index = 0; Index < MainObject->Vertices.size(); Index++)
+            {
+                const NetVertex& Vertex = MainObject->Vertices[Index];
+                SendUpdateVertexPosition(Index, Vertex.Position);
+            }
+        }
+
         //
 
         void RecievePackets()

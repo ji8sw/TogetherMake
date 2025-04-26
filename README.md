@@ -35,3 +35,6 @@ This project has a lot of to-do's as it was literally just created.
 
 - Controls: stop camera jumping to center
 - Misc: server configuration file (for password)
+- UI: top tab bar (file, edit, view, etc)
+- UI: reset scene
+- UI: reset object vertices to shape (cone, sphere, pyramid)

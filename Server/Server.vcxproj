@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="..\PacketHelper.h" />
     <ClInclude Include="NetManager.h" />
+    <ClInclude Include="Value.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

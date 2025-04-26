@@ -83,6 +83,7 @@ int main()
 	NManager.MainObject = &MainObject;
 	GManager.UpdateCameraOrbit(glm::vec3(0, 0, 0));
 	std::string NameInput = "Player";
+	std::string PasswordInput = "";
 
 	while (GManager.StandardFrameStart(0.2f, 0.3f, 0.4f, 1.0f))
 	{
@@ -290,6 +291,7 @@ int main()
 						ImGui::Text("Not Connected...");
 
 						ImGui::InputText("Nickname", &NameInput);
+						ImGui::InputText("Server Password", &PasswordInput);
 
 						if (ImGui::Button("Connect"))
 						{
@@ -300,9 +302,9 @@ int main()
 							else // connected, send nickname to server
 							{
 								Packet packet = Packet(PROVIDE_JOINER_INFO);
-								appendString(packet.data, NameInput.c_str());
+								appendString(packet.data, NameInput);
 								appendInt(packet.data, MAKETOGETHER_VERSION);
-								appendString(packet.data, ""); // password
+								appendString(packet.data, PasswordInput); // password
 								Samurai::sendNow(packet, NManager.Server); // TODO: REPLACE WITH CHOSEN NICKNAME
 
 								Packet SyncVerticesPacket = Packet(REQUEST_VERTICES);
@@ -310,6 +312,17 @@ int main()
 							}
 						}
 					}
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Object"))
+				{
+					ImGui::Text("Reset to:");
+					if (ImGui::Button("Cube"))
+					{
+						MainObject.Vertices = NetVertex::FromRawList(CubeVertices);
+						NManager.UpdateAllVertices();
+					}
+
 					ImGui::EndTabItem();
 				}
 				ImGui::EndTabBar();
