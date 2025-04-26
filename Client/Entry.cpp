@@ -21,7 +21,9 @@ enum EMode
 
 NetManager::Manager NManager;
 Object MainObject;
+std::vector<unsigned int> SelectedVertices;
 int SelectedVertexIndex = -1;
+bool HasSelectedMultipleVertices = false;
 EMode SelectedMode = None;
 
 class MoveVertexAction : public StoredActionData
@@ -128,6 +130,8 @@ int main()
 #else
 				MoveVertexData->Reverse(false);
 #endif
+				SelectedVertexIndex = INVALID_INT;
+				SelectedVertices.clear();
 				break;
 			}
 			case None:
@@ -216,13 +220,35 @@ int main()
 			if (DesiredVertexIndex != INVALID_INT && MainObject.VertexDoesExist(DesiredVertexIndex))
 			{
 				bool AlreadySelected = SelectedVertexIndex == DesiredVertexIndex;
+
+				for (unsigned int VertexIndex = 0; VertexIndex < SelectedVertices.size(); VertexIndex++)
+				{
+					if (SelectedVertices[VertexIndex] == DesiredVertexIndex)
+					{
+						AlreadySelected = true;
+						break;
+					}
+				}
+
 				// Ensure vertex is not grabbed by another player
 				if (!AlreadySelected && !MainObject.Vertices[DesiredVertexIndex].IsGrabbed)
 				{
-					// Deselect current vertex then select the other
-					if (SelectedVertexIndex != INVALID_INT) NManager.SendOnDeselectVertex(SelectedVertexIndex);
-					SelectedVertexIndex = DesiredVertexIndex;
-					NManager.SendOnSelectVertex(SelectedVertexIndex);
+					if (GManager.IManager->Keys[CTRL].PressedOrRepeated) // Control: select multiple
+					{
+						SelectedVertices.push_back(DesiredVertexIndex);
+						NManager.SendOnSelectVertex(DesiredVertexIndex);
+						HasSelectedMultipleVertices = true;
+						GManager.IManager->Keys[CTRL].PressedOrRepeated = false;
+					}
+					else
+					{
+						// Deselect current vertex then select the other
+						if (SelectedVertexIndex != INVALID_INT) NManager.SendOnDeselectVertex(SelectedVertexIndex);
+						SelectedVertexIndex = DesiredVertexIndex;
+						NManager.SendOnSelectVertex(SelectedVertexIndex);
+						HasSelectedMultipleVertices = false;
+						SelectedVertices.clear();
+					}
 				}
 			}
 			else if (SelectedVertexIndex != INVALID_INT) // the player has a vertex selected but clicked away, probably to stop selecting.
@@ -234,11 +260,25 @@ int main()
 
 		if (MainObject.VertexDoesExist(SelectedVertexIndex))
 		{
-			auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
-			auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
+			if (HasSelectedMultipleVertices)
+			{
+				for (unsigned int VertexIndex = 0; VertexIndex < SelectedVertices.size(); VertexIndex++)
+				{
+					auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertices[VertexIndex]);
+					auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
 
-			// Draw the circle
-			DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+					// Draw the circle
+					DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+				}
+			}
+			else
+			{
+				auto VertexPosition = MainObject.GetVertexWorldPosition(SelectedVertexIndex);
+				auto VertexScreenPosition = GManager.WorldToScreenPosition(VertexPosition);
+
+				// Draw the circle
+				DrawList->AddCircle(VertexScreenPosition, 10.0f, SELECTION_COLOUR);
+			}
 		}
 
 		// if we are connected, draw circles on all vertices that are grabbed by other players

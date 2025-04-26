@@ -126,13 +126,15 @@ void Input::KeyCallback(GLFWwindow* Window, int Keycode, int ScanCode, int Actio
 	}
 
 	// Additionally pressed modifier keys such as shift and whatnot
+	Keys[SHIFT].PressedOrRepeated = false;
+	Keys[CTRL].PressedOrRepeated = false;
 	switch (Mods)
 	{
 	case 1:
-		Keys[SHIFT].JustReleased = true;
+		Keys[SHIFT].PressedOrRepeated = true;
 		break;
 	case 2:
-		Keys[CTRL].JustReleased = true;
+		Keys[CTRL].PressedOrRepeated = true;
 		break;
 	}
 	
