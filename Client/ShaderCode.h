@@ -39,51 +39,35 @@ uniform vec3 LightPosition;
 uniform vec3 LightColour;
 uniform vec3 ViewPosition;
 uniform float LightRange;
-const float Shine = 16.0f;
+const float Shine = 32.0f;
 
 out vec4 FragColor;
 
 void main()
 {
-    float AmbientStrength = 0.3;
+    // Distance and Attenuation
+    float Distance = length(LightPosition - FragPosition);
+    float Attenuation = 1.0 / (1.0 + (Distance * Distance) / (LightRange * LightRange));
+
+    float AmbientStrength = 0.1;
     vec3 Ambient = AmbientStrength * LightColour;
 
-	vec3 DiffuseLight = Ambient;
-	vec3 SpecularLight = vec3(0);
-	vec3 SurfaceNormal = normalize(FragNormal);
-
-	vec3 ViewDirection = normalize(ViewPosition - FragPosition);
+    // Diffuse
+    vec3 Normal = normalize(FragNormal);
+	vec3 LightDirection = normalize(LightPosition - FragPosition);
+    float Diff = max(dot(Normal, LightDirection), 0.0f);
+    vec3 Diffuse = Diff * LightColour * Colour.xyz;
     
-    vec3 DirectionToLight = LightPosition - FragPosition;
-
-	// Light Falloff
-	float Distance = length(DirectionToLight);
-	float RangeAttenuation = clamp(1.0 - (Distance / LightRange), 0.0, 1.0);
-	RangeAttenuation *= RangeAttenuation; // optional: smooth falloff
-	float Attenuation = 1.0 / (1.0 + 0.09 * Distance + 0.032 * Distance * Distance);
-	Attenuation *= RangeAttenuation;
-
-	DirectionToLight = normalize(DirectionToLight);
-
-	float CosAngleIncidence = max(dot(normalize(SurfaceNormal), DirectionToLight), 0);
-	vec3 Intensity = LightColour * Attenuation;
-
-	if (CosAngleIncidence > 0.0) 
-	{
-	    DiffuseLight = Ambient + Intensity * CosAngleIncidence;
-	} 
-	else 
-	{
-	    DiffuseLight = Ambient;
-	}
-
-	// Specular Lighting
-	vec3 HalfAngle = normalize(DirectionToLight + ViewDirection);
-	float BlinnTerm = dot(SurfaceNormal, HalfAngle);
-	BlinnTerm = clamp(BlinnTerm, 0, 1);
-	BlinnTerm = pow(BlinnTerm, Shine); // Higher = Sharper Highlight
-	SpecularLight += Intensity * BlinnTerm;
-
-	FragColor = vec4(pow(DiffuseLight * Colour.xyz + SpecularLight * Colour.xyz, vec3(1.0/2.2)), 1.0f);
+    // Specular
+    vec3 ViewDirection = normalize(ViewPosition - FragPosition);
+    vec3 HalfwayDirection = normalize(LightDirection + ViewDirection);
+    float Spec = pow(max(dot(Normal, HalfwayDirection), 0.0), Shine);
+    vec3 Specular = LightColour * Spec * 0.3;
+    
+    // Apply attenuation
+    Diffuse *= Attenuation;
+    Specular *= Attenuation;
+    
+    FragColor = vec4(Ambient + Diffuse + Specular, 1.0);
 }
 )";
